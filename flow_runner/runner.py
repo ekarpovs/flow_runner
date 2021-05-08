@@ -4,8 +4,8 @@ from .stack import Stack
 from .wrapper import flowoperation
 
 class Runner():
-  def __init__(self, factory):
-    self.get = factory.get
+  def __init__(self, operation_loader):
+    self.get = operation_loader.get
     self.cv2image = None
     self.context_stack = Stack()
     self.step_index = 0

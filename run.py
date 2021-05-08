@@ -5,6 +5,7 @@
 import argparse
 import sys
 import json
+import operation_loader
 
 from flow_runner.runner import Runner  
 
@@ -62,12 +63,8 @@ def run():
   steps = [*first_step, *steps, *last_step]
   flow_meta['steps'] = steps
 
-  # import factory for loading modules outside of the package 
-  sys.path.append(config['factory'])
-  import factory
-
   # init runner
-  runner = Runner(factory)
+  runner = Runner(operation_loader)
 
   # execute the flow
   runner.run(flow_meta) 
