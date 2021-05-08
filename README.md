@@ -17,7 +17,7 @@ _____
     |   
     
 
-    |__ /engine/ The project files
+    |__ /flow_runner/ The project files
     |
 
 ## Local Installation
