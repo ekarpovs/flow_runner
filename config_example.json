@@ -1,0 +1,10 @@
+{
+  "factory": "<path to>/loader",
+  "modules": [
+    "<path to>/modules",
+    "<path to>/modules-common"
+  ],
+  "worksheets": "<path to>/worksheets",
+  "images": "<path to>/input",
+  "results": "<path to>/output"
+}
