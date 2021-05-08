@@ -20,16 +20,15 @@ _____
     |__ /engine/ The project files
     |
 
-## Installation
+## Local Installation
 
 ```bash
-cd engine
-pip install opencv-python
+cd flow_runner
+pip install -e .
 ```
 
-## Run
+## Usage
 
 ```bash
-cd project
-python driver.py -f <worksheet name> -i <input file name>
+python run.py -f <worksheet name> -i <input file name>
 ```
