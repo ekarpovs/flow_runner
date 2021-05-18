@@ -83,6 +83,7 @@ class Runner():
         execute = False
       else:
         step_meta = steps_meta[self.step_index]
+        print("step", step_meta)
         if (step_meta is not None) and (self.step_index < len(steps_meta)):
           image = self.run_step(step_meta)
           self.calculate_next_step_index(step_meta)
