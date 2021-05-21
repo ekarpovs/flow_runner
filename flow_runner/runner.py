@@ -42,11 +42,12 @@ class Runner():
     # Craete the step context with input values 
     step_context = Context(steps_meta, **kwargs)
     # load the step's function
-    operation = self.get(steps_meta['exec'])
-    wrapped = flowoperation(operation)
+    if 'exec' in steps_meta:
+      operation = self.get(steps_meta['exec'])
+      wrapped = flowoperation(operation)
 
-    # Run the step
-    kwargs = wrapped(steps_meta, **kwargs)    
+      # Run the step
+      kwargs = wrapped(steps_meta, **kwargs)    
     # Set result to step context
     step_context.set_after(**kwargs)
     # Store the context
@@ -68,6 +69,12 @@ class Runner():
 
     return
 
+  def continue_to_run(self, max_step):
+    if self.step_index >= max_step:
+      print("no more steps")
+      return False
+    return True
+    
 
   def run(self, flow_meta, one = False):
     if not one: 
@@ -76,21 +83,13 @@ class Runner():
     image = None
     steps_meta = flow_meta['steps']    
 
-    execute = True
-    while(execute):
-      if self.step_index >= len(steps_meta):
-        print("no more steps")
-        execute = False
-      else:
-        step_meta = steps_meta[self.step_index]
-        print("step", step_meta)
-        if (step_meta is not None) and (self.step_index < len(steps_meta)):
-          image = self.run_step(step_meta)
-          self.calculate_next_step_index(step_meta)
-          if one == True: 
-            execute = False
-        else:
-          execute = False
+    while(self.continue_to_run(len(steps_meta))):
+      step_meta = steps_meta[self.step_index]
+      print("step", step_meta)
+      image = self.run_step(step_meta)
+      self.calculate_next_step_index(step_meta)
+      if one == True: 
+        break;
 
     return self.step_index, image
 
