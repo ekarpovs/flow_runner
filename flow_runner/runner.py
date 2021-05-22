@@ -18,6 +18,7 @@ class Runner():
 
     return
 
+
   def set_input_image(self, cv2image):
     self.cv2image = cv2image
 
@@ -27,7 +28,6 @@ class Runner():
 # EXECUTION
   def init_step(self):
     if self.context_stack.isEmpty():
-      # self.state.reset()
       kwargs = {}
       kwargs['orig'] = self.cv2image
       kwargs['image'] = self.cv2image
@@ -37,17 +37,20 @@ class Runner():
     return kwargs
 
 
-  def run_step(self, steps_meta):
+  def run_step(self, step_meta):
     kwargs = self.init_step()
     # Craete the step context with input values 
-    step_context = Context(steps_meta, **kwargs)
+    step_context = Context(step_meta, **kwargs)
+    
     # load the step's function
-    if 'exec' in steps_meta:
-      operation = self.get(steps_meta['exec'])
+    if 'exec' in step_meta:
+      operation = self.get(step_meta['exec'])
       wrapped = flowoperation(operation)
+      # Run the exec
+      kwargs = wrapped(step_meta, **kwargs)  
+    elif 'stm' in step_meta:
+      operation = self.get(step_meta['stm'])
 
-      # Run the step
-      kwargs = wrapped(steps_meta, **kwargs)    
     # Set result to step context
     step_context.set_after(**kwargs)
     # Store the context
@@ -56,22 +59,21 @@ class Runner():
     return kwargs['image']
     
 
-  def calculate_next_step_index(self, step_meta):
-    
+  def calculate_next_step_index(self, step_meta):   
     self.step_index += 1
 
     return
 
 
-  def calculate_prev_step_index(self, step_meta):
-    
+  def calculate_prev_step_index(self, step_meta):  
     self.step_index -= 1
 
     return
 
+
   def continue_to_run(self, max_step):
     if self.step_index >= max_step:
-      print("no more steps")
+      print("bottom")
       return False
     return True
     
@@ -88,7 +90,8 @@ class Runner():
       print("step", step_meta)
       image = self.run_step(step_meta)
       self.calculate_next_step_index(step_meta)
-      if one == True: 
+
+      if one == True:
         break;
 
     return self.step_index, image
@@ -99,17 +102,18 @@ class Runner():
     image = None
 
     if self.step_index > 0:
-      image = self.context_stack.peek().kwargs_before['image']
       step_meta = self.context_stack.peek().step_meta
+      image = self.context_stack.peek().kwargs_before['image']
       self.context_stack.pop()
-
       self.calculate_prev_step_index(step_meta)
+    else:
+      self.top()
 
     return self.step_index, image
 
 
   def top(self):
     print("top")
+    self.reset()
 
-    return self.reset()
-
+    return
