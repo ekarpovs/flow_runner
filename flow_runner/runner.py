@@ -7,14 +7,12 @@ class Runner():
   def __init__(self, operation_loader):
     self.get = operation_loader.get
     self.cv2image = None
-    self.context_stack = Stack()
-    self.step_index = 0
+    self.context_stacks = Stack()
 
 
 # INITIALIZATION 
   def reset(self):
-    self.context_stack.reset()
-    self.step_index = 0
+    self.context_stacks.reset()
 
     return
 
@@ -27,12 +25,13 @@ class Runner():
 
 # EXECUTION
   def init_step(self):
-    if self.context_stack.isEmpty():
+    if self.context_stacks.isEmpty():
+      self.context_stacks.push(Stack())
       kwargs = {}
       kwargs['orig'] = self.cv2image
       kwargs['image'] = self.cv2image
     else:
-      kwargs = self.context_stack.peek().kwargs_after
+      kwargs = self.context_stacks.peek().peek().kwargs_after
 
     return kwargs
 
@@ -54,25 +53,23 @@ class Runner():
     # Set result to step context
     step_context.set_after(**kwargs)
     # Store the context
-    self.context_stack.push(step_context)
+    self.context_stacks.peek().push(step_context)
 
     return kwargs['image']
     
 
-  def calculate_next_step_index(self, step_meta):   
-    self.step_index += 1
+  def step_index(self):  
+    step_index = 0
+    if not self.context_stacks.isEmpty():
+      step_index = self.context_stacks.peek().size()
 
-    return
-
-
-  def calculate_prev_step_index(self, step_meta):  
-    self.step_index -= 1
-
-    return
+    return step_index
 
 
   def continue_to_run(self, max_step):
-    if self.step_index >= max_step:
+    if self.context_stacks.isEmpty():
+      return True
+    if self.step_index() >= max_step:
       print("bottom")
       return False
     return True
@@ -86,30 +83,27 @@ class Runner():
     steps_meta = flow_meta['steps']    
 
     while(self.continue_to_run(len(steps_meta))):
-      step_meta = steps_meta[self.step_index]
+      step_meta = steps_meta[self.step_index()]
       print("step", step_meta)
       image = self.run_step(step_meta)
-      self.calculate_next_step_index(step_meta)
 
       if one == True:
         break;
 
-    return self.step_index, image
+    return self.step_index(), image
 
 
 # PLAYBACK
   def back(self):
     image = None
-
-    if self.step_index > 0:
-      step_meta = self.context_stack.peek().step_meta
-      image = self.context_stack.peek().kwargs_before['image']
-      self.context_stack.pop()
-      self.calculate_prev_step_index(step_meta)
+    if self.step_index() > 0:
+      self.context_stacks.peek().peek().step_meta
+      image = self.context_stacks.peek().peek().kwargs_before['image']
+      self.context_stacks.peek().pop()
     else:
       self.top()
 
-    return self.step_index, image
+    return self.step_index(), image
 
 
   def top(self):
