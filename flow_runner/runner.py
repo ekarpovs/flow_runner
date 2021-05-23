@@ -11,14 +11,41 @@ class Runner():
 
 
 # INITIALIZATION 
+  def set_input_image(self, cv2image):
+    self.cv2image = cv2image
+
+    return
+
+# CONTEXT STACK OPERATIONS
   def reset(self):
     self.context_stacks.reset()
 
     return
 
+  def setup_new_stack(self):
+    self.context_stacks.push(Stack())
 
-  def set_input_image(self, cv2image):
-    self.cv2image = cv2image
+    return
+
+  def store_context(self, context):
+    self.context_stacks.peek().push(context)
+
+    return
+
+  def get_last_step_context(self):
+    return self.context_stacks.peek().peek()
+
+  def get_output_of_last_step(self):
+    return self.get_last_step_context().kwargs_after
+
+  def get_input_of_last_step(self):
+    return self.get_last_step_context().kwargs_before
+
+  def get_meta_of_last_step(self):
+    return self.get_last_step_context().step_meta
+
+  def remove_last_step_context(self):
+    self.context_stacks.peek().pop()
 
     return
 
@@ -26,12 +53,12 @@ class Runner():
 # EXECUTION
   def init_step(self):
     if self.context_stacks.isEmpty():
-      self.context_stacks.push(Stack())
+      self.setup_new_stack()
       kwargs = {}
       kwargs['orig'] = self.cv2image
       kwargs['image'] = self.cv2image
     else:
-      kwargs = self.context_stacks.peek().peek().kwargs_after
+      kwargs = self.get_output_of_last_step()
 
     return kwargs
 
@@ -50,10 +77,10 @@ class Runner():
     elif 'stm' in step_meta:
       operation = self.get(step_meta['stm'])
 
-    # Set result to step context
+    # Set the result to the step context
     step_context.set_after(**kwargs)
     # Store the context
-    self.context_stacks.peek().push(step_context)
+    self.store_context(step_context)
 
     return kwargs['image']
     
@@ -97,9 +124,10 @@ class Runner():
   def back(self):
     image = None
     if self.step_index() > 0:
-      self.context_stacks.peek().peek().step_meta
-      image = self.context_stacks.peek().peek().kwargs_before['image']
-      self.context_stacks.peek().pop()
+      meta = self.get_meta_of_last_step()
+      print("back", meta)
+      image = self.get_input_of_last_step()['image']
+      self.remove_last_step_context()
     else:
       self.top()
 
