@@ -7,7 +7,7 @@ class Runner():
   def __init__(self, operation_loader):
     self.get = operation_loader.get
     self.cv2image = None
-    self.context_stacks = Stack()
+    self.context_stacks = []
 
 
 # INITIALIZATION 
@@ -18,66 +18,115 @@ class Runner():
 
 # CONTEXT STACKS OPERATIONS
   def reset(self):
-    self.context_stacks.reset()
+    self.context_stacks = []
 
     return
 
   def setup_new_stack(self):
-    self.context_stacks.push(Stack())
+    self.context_stacks.append(Stack())
     return
-
-  def get_last_stack(self):
-    number_of_levels_in_stacks = self.context_stacks.size()
-    if number_of_levels_in_stacks <= 0:
+ 
+  def get_level_stack(self, level=0):
+    number_of_levels_in_stacks = len(self.context_stacks)
+    if number_of_levels_in_stacks < 1:
       return None
-    for level in range(number_of_levels_in_stacks, 1, -1):
-      self.context_stacks.peek()
-    return self.context_stacks.peek()
-  
+    return self.context_stacks[level]
+    
+  def stacks_indexes(self):
+    number_of_levels_in_stacks = len(self.context_stacks)
+    if number_of_levels_in_stacks < 1:
+      return None
+    indexes = []
+    for i in range(0, number_of_levels_in_stacks, 1):
+      indexes.append(self.context_stacks[i].size())
 
+    print("indexes", indexes)
+    return indexes
+
+  
+  def context_stacks_is_empty(self):
+    return len(self.context_stacks) == 0
 
 # STEP CONTEXT OPERATIONS
   def store_step_context(self, context):
-    stack = self.get_last_stack()
+    stack = self.get_level_stack()
     stack.push(context)
     return
 
+  def step_index(self, level=0):
+    step_index = 0
+    indexes = self.stacks_indexes()
+
+    if indexes is not None:
+      step_index = sum(indexes[0:level+1])
+    
+    print("step_index", step_index)
+
+    return step_index
+
+
+# LAST STEP CONTEXT 
   def get_last_step_context(self):
-    return self.get_last_stack().peek()
+    context = None
+    stack = self.get_level_stack()
+    if stack is not None:
+      context = stack.peek()
+
+    return context
 
   def remove_last_step_context(self):
-    self.get_last_stack().pop()
+    stack = self.get_level_stack() 
+    if stack is not None:
+      stack.pop()
+
     return
 
   def get_last_step_meta(self):
-    return self.get_last_step_context().step_meta
+    meta = None
+    context = self.get_last_step_context()
+    if context is not None:
+      meta = context.step_meta
+    
+    return meta
 
   def get_last_step_output(self):
-    return self.get_last_step_context().kwargs_after
+    output = None
+    context = self.get_last_step_context()
+    if context is not None:
+      output = context.kwargs_after
+    
+    return output
 
   def get_last_step_input(self):
-    return self.get_last_step_context().kwargs_before
+    input = None
+    context = self.get_last_step_context()
+    if context is not None:
+      input = context.kwargs_after
+    
+    return input
 
   def is_last_step_exec(self):
-    if self.context_stacks.isEmpty():
+    if self.context_stacks_is_empty:
       return True
     return 'exec' in self.get_last_step_meta()
 
   def is_last_step_statement(self):
-    if self.context_stacks.isEmpty():
+    if self.context_stacks_is_empty():
       return True
     return 'stm' in self.get_last_step_meta()
 
 
 # EXECUTION
-  def init_step(self):
-    if self.context_stacks.isEmpty():
+  def init_step(self, stm=False):
+    if self.context_stacks_is_empty():
       self.setup_new_stack()
       kwargs = {}
       kwargs['orig'] = self.cv2image
       kwargs['image'] = self.cv2image
     else:
       kwargs = self.get_last_step_output()
+      if stm:
+        self.setup_new_stack()
 
     return kwargs
 
@@ -106,19 +155,28 @@ class Runner():
     return kwargs['image']
     
 
-  def step_index(self):  
-    step_index = 0
-    if not self.context_stacks.isEmpty():
-      step_index = self.context_stacks.peek().size()
+  def run_stm(self, step_meta):  
+    kwargs = self.init_step(True)
+    # Craete the step context with input values 
+    step_context = Context(step_meta, **kwargs)
+    # load the step's function
+    operation = self.get(step_meta['stm'])
+    # Run the staement
+    kwargs = operation(step_meta, **kwargs)  
+    # Set the result to the step context
+    step_context.set_after(**kwargs)
+    # Store the context
+    self.store_step_context(step_context)
 
-    return step_index
+    return kwargs['image']
+
 
 
   def continue_to_run(self, max_step):
-    if self.context_stacks.isEmpty():
+    if self.context_stacks_is_empty():
       return True
     if self.step_index() >= max_step:
-      print("bottom")
+      print("bottom")      
       return False
     return True
     
@@ -131,23 +189,16 @@ class Runner():
     steps_meta = flow_meta['steps']    
 
     while(self.continue_to_run(len(steps_meta))):
+      
       step_meta = steps_meta[self.step_index()]
+
       print("step", step_meta)
       if self.is_step_exec(step_meta) and self.is_last_step_exec():
         image = self.run_step(step_meta)
       elif self.is_step_statement(step_meta) or (self.is_last_step_statement() and self.is_step_exec(step_meta)):
         if self.is_step_statement(step_meta):
-          kwargs = self.get_last_step_input()
-          self.setup_new_stack()
-          # Craete the step context with input values 
-          step_context = Context(step_meta, **kwargs)
-          # operation = self.get(step_meta['stm'])
-          # Set the result to the step context
-          step_context.set_after(**kwargs)
-          # Store the context
-          self.store_step_context(step_context)
+          image = self.run_stm(step_meta)
         else:
-          # operation = self.get(step_meta['exec'])
           image = self.run_step(step_meta)
 
       if one == True:
