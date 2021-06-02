@@ -125,12 +125,13 @@ class Runner():
   def is_step_statement(self, step_meta):
     return 'stm' in step_meta
 
+  
 
-  def run_step(self, step_meta, kwargs):  
+  def run_step(self, step_meta, kwargs, type):  
     # Craete the step context with input values 
     step_context = Context(step_meta, **kwargs)
     # load the step's function
-    operation = self.get_operation(step_meta['exec'])
+    operation = self.get_operation(step_meta[type])
     wrapped = flowoperation(operation)
     # Run the exec
     kwargs = wrapped(step_meta, **kwargs)  
@@ -141,22 +142,6 @@ class Runner():
 
     return kwargs
     
-
-  def run_stm(self, step_meta, kwargs):  
-    # Craete the step context with input values 
-    step_context = Context(step_meta, **kwargs)
-    # load the step's function
-    operation = self.get_operation(step_meta['stm'])
-    # Run the statement
-    kwargs = operation(step_meta, **kwargs)  
-    # Set the result to the step context
-    step_context.set_after(**kwargs)
-    # Store the context
-    self.store_step_context(step_context)
-
-    return kwargs
-
-
 
   def continue_to_run(self, max_step):
     if self.context_stacks_is_empty():
@@ -183,10 +168,10 @@ class Runner():
       is_exec = self.is_step_exec(step_meta)
       kwargs = self.init_step(not is_exec)
 
-      if is_exec:
-        kwargs = self.run_step(step_meta, kwargs)
-      else:
-        kwargs = self.run_stm(step_meta, kwargs)
+      type = 'exec'
+      if not is_exec:
+        type = 'stm'
+      kwargs = self.run_step(step_meta, kwargs, type)
 
       if one == True:
         break;
