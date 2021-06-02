@@ -44,8 +44,8 @@ class Runner():
     stack.push(context)
     return
 
-  def step_index(self):
-    step_index = [0]
+  def step_indexes(self):
+    step_indexes = [0]
 
     number_of_stacks = len(self.context_stacks)
     if number_of_stacks >= 1:
@@ -54,10 +54,10 @@ class Runner():
         indexes.append(self.context_stacks[i].size())
 
       if indexes is not None:
-        step_index = [idx for idx in indexes]
+        step_indexes = [idx for idx in indexes]
 
-    print('step_index: {}'.format(step_index))
-    return step_index
+    print('step_indexes: {}'.format(step_indexes))
+    return step_indexes
 
 
 # LAST STEP CONTEXT 
@@ -146,8 +146,8 @@ class Runner():
   def continue_to_run(self, max_step):
     if self.context_stacks_is_empty():
       return True
-    global_step_index = sum(self.step_index())
-    if global_step_index >= max_step:
+    step_indexes = sum(self.step_indexes())
+    if step_indexes >= max_step:
       print("bottom")      
       return False
     return True
@@ -162,7 +162,7 @@ class Runner():
 
     while(self.continue_to_run(len(steps_meta))):
       
-      step_meta = steps_meta[sum(self.step_index())]
+      step_meta = steps_meta[sum(self.step_indexes())]
       print("step", step_meta)
       
       is_exec = self.is_step_exec(step_meta)
@@ -180,13 +180,13 @@ class Runner():
     if kwargs is not None:
       image = kwargs['image']
 
-    return sum(self.step_index()), image
+    return self.step_indexes(), image
 
 
 # PLAYBACK
   def back(self):
     image = None
-    if self.step_index()[self.get_current_level()] > 0:
+    if self.step_indexes()[self.get_current_level()] > 0:
       meta = self.get_last_step_meta()
       print("back", meta)
       image = self.get_last_step_input()['image']
@@ -194,7 +194,7 @@ class Runner():
     else:
       self.top()
 
-    return sum(self.step_index()), image
+    return self.step_indexes(), image
 
 
   def top(self):
