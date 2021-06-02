@@ -73,6 +73,9 @@ class Runner():
     stack = self.get_level_stack() 
     if stack is not None:
       stack.pop()
+      # remove empty stack from the stacks list
+      if stack.isEmpty():
+        self.context_stacks.pop()
 
     return
 
@@ -123,8 +126,7 @@ class Runner():
     return 'stm' in step_meta
 
 
-  def run_step(self, step_meta):  
-    kwargs = self.init_step()
+  def run_step(self, step_meta, kwargs):  
     # Craete the step context with input values 
     step_context = Context(step_meta, **kwargs)
     # load the step's function
@@ -140,8 +142,7 @@ class Runner():
     return kwargs
     
 
-  def run_stm(self, step_meta):  
-    kwargs = self.init_step(True)
+  def run_stm(self, step_meta, kwargs):  
     # Craete the step context with input values 
     step_context = Context(step_meta, **kwargs)
     # load the step's function
@@ -178,13 +179,14 @@ class Runner():
       
       step_meta = steps_meta[sum(self.step_index())]
       print("step", step_meta)
+      
+      is_exec = self.is_step_exec(step_meta)
+      kwargs = self.init_step(not is_exec)
 
-      if self.is_step_exec(step_meta):
-        kwargs = self.run_step(step_meta)
-      elif self.is_step_statement(step_meta):
-        kwargs = self.run_stm(step_meta)
+      if is_exec:
+        kwargs = self.run_step(step_meta, kwargs)
       else:
-        print("Unknown operation type", step_meta)
+        kwargs = self.run_stm(step_meta, kwargs)
 
       if one == True:
         break;
