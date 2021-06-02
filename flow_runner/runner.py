@@ -172,25 +172,21 @@ class Runner():
       if one == True:
         break;
 
-    image = None
-    if kwargs is not None:
-      image = kwargs['image']
-
-    return self.step_indexes(), image
+    return self.step_indexes(), kwargs
 
 
 # PLAYBACK
   def back(self):
-    image = None
+    kwargs = None
     if self.step_indexes()[self.get_current_level()] > 0:
       meta = self.get_last_step_meta()
       print("back", meta)
-      image = self.get_last_step_input()['image']
+      kwargs = self.get_last_step_input()
       self.remove_last_step_context()
     else:
       self.top()
 
-    return self.step_indexes(), image
+    return self.step_indexes(), kwargs
 
 
   def top(self):
