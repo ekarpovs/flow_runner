@@ -194,7 +194,7 @@ class Runner():
     else:
       self.top()
 
-    return self.step_index()[self.get_current_level()], image
+    return sum(self.step_index()), image
 
 
   def top(self):
