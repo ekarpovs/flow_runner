@@ -122,10 +122,6 @@ class Runner():
   def is_step_exec(self, step_meta):
     return 'exec' in step_meta
 
-  def is_step_statement(self, step_meta):
-    return 'stm' in step_meta
-
-  
 
   def run_step(self, step_meta, kwargs, type):  
     # Craete the step context with input values 
