@@ -3,12 +3,16 @@
 from sys import maxsize
 
 class Stack:
-  def __init__(self):
+  def __init__(self, max_size=200):
+    self.max_size = max_size
     self.stack = []
 
 
   def isEmpty(self):
     return len(self.stack) == 0
+
+  def isFull(self):
+    return len(self.stack) > self.max_size
 
   # Function to add an item to stack. It increases size by 1
   def push(self, item):
