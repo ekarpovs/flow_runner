@@ -211,18 +211,18 @@ class Runner():
         # Reset the stm input for the future usage
         self.update_last_step_output(kwargs)
 
+      # Check stack level and the stack overflow for level > 0
+      stack = self.get_level_stack()
+      if stack is not None and stack.isFull():
+        print("stack for level {} is full".format(self.get_current_level()))
+        # change step number regarding current statment type and its 'include' parameter
+        if  kwargs['end'] is not True:
+          # move the last step state to the above statement 
+          self.context_stacks.pop()
+
       if one == True:
         break;
       
-    # Check stack level and the stack overflow for level > 0
-    stack = self.get_level_stack()
-    if stack is not None and stack.isFull():
-      print("stack for level {} is full".format(self.get_current_level()))
-      # change step number regarding current statment type and its 'include' parameter
-      if  kwargs['end'] is not True:
-        # move the last step state to the above statement 
-        self.context_stacks.pop()
-
     return self.step_indexes(), kwargs
 
 
