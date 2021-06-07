@@ -167,10 +167,9 @@ class Runner():
 
 
   def update_step_meta(self, step_meta, **kwargs):
-    # Temporary!!!
-    # TODO: must find common solution.
-    print("kwargs angle", kwargs['angle'])
-    step_meta['angle'] = kwargs['angle']
+    update_stm_state = kwargs['stm_state']
+    update_stm_state(step_meta)
+
     return step_meta
 
 
@@ -217,7 +216,7 @@ class Runner():
         print("stack for level {} is full".format(self.get_current_level()))
         # change step number regarding current statment type and its 'include' parameter
         if  kwargs['end'] is not True:
-          # move the last step state to the above statement 
+          # move the last step state above to the  statement 
           self.context_stacks.pop()
 
       if one == True:
