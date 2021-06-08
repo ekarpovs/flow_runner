@@ -174,6 +174,29 @@ class Runner():
 
     return step_meta
 
+  def resume_stm(self, end):
+    # Check stack level and the stack overflow for level > 0
+    stack = self.get_level_stack()
+    if stack is not None and stack.isFull():
+      if self.trace:
+        print("stack for level {} is full".format(self.get_current_level()))
+      # change step number regarding current statment type and its 'include' parameter
+      if  end:
+        # move the last step state above to the statement 
+        level = self.get_current_level()
+        prev_stack = self.get_level_stack(level-1)
+        for_move = []
+        for i in range(0, stack.size()):
+          step_context = stack.pop()
+          for_move.append(step_context)
+        for i in range(len(for_move), 0, -1):
+          step_context = for_move[i-1]
+          prev_stack.push(step_context)
+
+      self.context_stacks.pop()       
+
+    return
+
 
   def continue_to_run(self, max_step):
     if self.context_stacks_is_empty():
@@ -214,27 +237,7 @@ class Runner():
         # Reset the stm input for the future usage
         self.update_last_step_output(kwargs)
 
-      # Check stack level and the stack overflow for level > 0
-      stack = self.get_level_stack()
-      if stack is not None and stack.isFull():
-        if self.trace:
-          print("stack for level {} is full".format(self.get_current_level()))
-        # change step number regarding current statment type and its 'include' parameter
-        if  kwargs['end'] is not True:
-          self.context_stacks.pop()
-        else:
-          # move the last step state above to the statement 
-          level = self.get_current_level()
-          prev_stack = self.get_level_stack(level-1)
-          for_move = []
-          for i in range(0, stack.size()):
-            step_context = stack.pop()
-            for_move.append(step_context)
-          for i in range(len(for_move), 0, -1):
-            step_context = for_move[i-1]
-            prev_stack.push(step_context)
-
-          self.context_stacks.pop()       
+      self.resume_stm('end' in kwargs and kwargs['end'] == True)
 
       if one == True:
         break;
