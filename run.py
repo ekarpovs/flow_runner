@@ -19,6 +19,9 @@ def parseArgs():
 	help = "path to the input file(s)")
   ap.add_argument("-o", "--output", required = False,
 	help = "path to the output file(s)")
+  ap.add_argument("-t", "--trace", required = False,
+  default=False,
+	help = "print output")
   
   args = ap.parse_args()   
   kwargs = dict((k,v) for k,v in vars(args).items() if k!="message_type")
@@ -64,7 +67,7 @@ def run():
   flow_meta['steps'] = steps
 
   # init runner
-  runner = Runner(operation_loader)
+  runner = Runner(operation_loader, kwargs['trace'])
 
   # execute the flow
   runner.run(flow_meta) 

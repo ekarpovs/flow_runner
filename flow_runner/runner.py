@@ -4,8 +4,9 @@ from .stack import Stack
 from .wrapper import flowoperation
 
 class Runner():
-  def __init__(self, operation_loader):
+  def __init__(self, operation_loader, trace=True):
     self.get_operation = operation_loader.get
+    self.trace = trace
     self.cv2image = None
     self.context_stacks = []
 
@@ -56,8 +57,8 @@ class Runner():
 
       if indexes is not None:
         step_indexes = [idx for idx in indexes]
-
-    print('step_indexes: {}'.format(step_indexes))
+    if self.trace:
+      print('step_indexes: {}'.format(step_indexes))
     return step_indexes
 
 
@@ -132,7 +133,8 @@ class Runner():
       if stm:
         kwargs['idx'] = sum(self.step_indexes())
         kwargs['include'] = max_size
-        print("idx {}, include {}".format(kwargs['idx'], kwargs['include']))
+        if self.trace:
+          print("idx {}, include {}".format(kwargs['idx'], kwargs['include']))
 
         self.setup_new_stack(max_size)
 
@@ -178,7 +180,8 @@ class Runner():
       return True
     step_indexes = sum(self.step_indexes())
     if step_indexes >= max_step:
-      print("bottom")      
+      if self.trace:
+        print("bottom")      
       return False
     return True
     
@@ -192,7 +195,8 @@ class Runner():
 
     while(self.continue_to_run(len(steps_meta))):     
       step_meta = steps_meta[sum(self.step_indexes())]
-      print("step", step_meta)     
+      if self.trace:
+        print("step", step_meta)     
 
       if self.is_step_exec(step_meta):
         # Chek last step type is stm          
@@ -213,11 +217,24 @@ class Runner():
       # Check stack level and the stack overflow for level > 0
       stack = self.get_level_stack()
       if stack is not None and stack.isFull():
-        print("stack for level {} is full".format(self.get_current_level()))
+        if self.trace:
+          print("stack for level {} is full".format(self.get_current_level()))
         # change step number regarding current statment type and its 'include' parameter
         if  kwargs['end'] is not True:
-          # move the last step state above to the  statement 
           self.context_stacks.pop()
+        else:
+          # move the last step state above to the statement 
+          level = self.get_current_level()
+          prev_stack = self.get_level_stack(level-1)
+          for_move = []
+          for i in range(0, stack.size()):
+            step_context = stack.pop()
+            for_move.append(step_context)
+          for i in range(len(for_move), 0, -1):
+            step_context = for_move[i-1]
+            prev_stack.push(step_context)
+
+          self.context_stacks.pop()       
 
       if one == True:
         break;
@@ -230,7 +247,8 @@ class Runner():
     kwargs = None
     if self.step_indexes()[self.get_current_level()] > 0:
       meta = self.get_last_step_meta()
-      print("back", meta)
+      if self.trace:
+        print("back", meta)
       kwargs = self.get_last_step_input()
       self.remove_last_step_context()
     else:
@@ -240,7 +258,8 @@ class Runner():
 
 
   def top(self):
-    print("top")
+    if self.trace:
+     print("top")
     self.reset()
 
     return
