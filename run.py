@@ -1,31 +1,32 @@
 # Usage:
-#   python run.py -f <worksheet name> -i <input file name> 
+#   python run.py -i <input file> -o <output file> [-t True]
 # 
 
 import argparse
-import sys
 import json
-import operation_loader
+from os import pathsep
+import cv2
 
-from flow_runner.runner import Runner  
-
+from flow_runner.runner import Runner
 
 # Construct the argument parser and parse the arguments
 def parseArgs():
-  ap = argparse.ArgumentParser(description="WorkShop")
-  ap.add_argument("-f", "--flow", required = True,
-	help = "name of a worksheet without extension.")
+  ap = argparse.ArgumentParser(description="flow runner fsm")
+  ap.add_argument("-m", "--meta", required = True,
+	help = "full path to the meta data file")
   ap.add_argument("-i", "--input", required = True,
-	help = "path to the input file(s)")
+	help = "full path to the input file(s)")
   ap.add_argument("-o", "--output", required = False,
-	help = "path to the output file(s)")
+	help = "full path to the output file(s)")
+  ap.add_argument("-s", "--step", required = False,
+  default="no",
+	help = "step mode")
   ap.add_argument("-t", "--trace", required = False,
-  default=False,
+  default="no",
 	help = "print output")
   
   args = ap.parse_args()   
   kwargs = dict((k,v) for k,v in vars(args).items() if k!="message_type")
-  
   return kwargs
 
 
@@ -36,47 +37,68 @@ def readJson(ffn):
     data = json.load(f)
   return data
 
-# Read configuration file
+# Read configuration files
 def readConfig():
-  config = readJson('./config.json')
+  return readJson('./cfg/fsm-cfg.json')
 
-  return config
+def readMeta(ffn):
+  return readJson(ffn)
+
+def readImage(ffn):
+  image = cv2.imread(ffn)
+  return image
+
+def storeImage(input_ffn, out_path, image, idx):
+  ffn = input_ffn.replace('\\', '/')
+  fn, ext = ffn.split('/')[-1].split('.')
+  ffn = "{}/result-{}-{}.{}".format(out_path, fn, idx, ext)
+  cv2.imwrite(ffn, image)
+
+def run_by_step(runner, flow_meta):
+  idx = 0
+  while(True):
+    print('q - quit, r - run all')
+    print('waits for an event(next, prev, current):')
+    event = input()
+    if event == 'q':
+      return
+
+    step_meta = flow_meta[idx]
+    idx = run_step(runner, event, step_meta)
+
+def run_all(runner, flow_meta):
+    idx = 0
+    n = runner.get_number_of_states()
+    for idx in range(n): 
+      step_meta = flow_meta[idx]
+      idx = run_step(runner, 'next', step_meta)
 
 
-def run():
-  config = readConfig()
+def run_step(runner, event, step_meta):
+    idx, cv2image = runner.put_event(event, step_meta)
+    storeImage(kwargs["input"], kwargs["output"], cv2image, idx)
+    return idx
 
-  # set paths to external modules located outside the package
-  for m in config['modules']:
-    sys.path.append(m)
 
-  # The first step will always "start" for get the flow input
-  image_file_name = "{}/{}".format(config['images'], kwargs["input"])
-  first_step = [{"exec": "common.start", "ffn": image_file_name}]
-
-  # The last step will always - store to store the flow output
-  result_file_name = "{}/result-{}".format(config['results'], kwargs["input"])
-  last_step = [{"exec": "common.store", "ffn": result_file_name}]
-
-  # get the flow worksheet
-  worksheet_file_name = "{}/{}.json".format(config['worksheets'], kwargs['flow'])
-  flow_meta = readJson(worksheet_file_name)
-  steps = flow_meta['steps']
-  # Add first/last steps for input/output
-  steps = [*first_step, *steps, *last_step]
-  flow_meta['steps'] = steps
-
-  # init runner
-  runner = Runner(operation_loader, kwargs['trace'])
-
-  # execute the flow
-  runner.run(flow_meta) 
-
-# Main function
+# Main function - the runner's client
 def main(**kwargs): 
+  fsm_conf = readConfig()
+  image = readImage(kwargs["input"])
+  flow_meta = readMeta(kwargs['meta'])
+  for i, meta in enumerate(flow_meta):
+    meta['id'] = i
 
-  run()
+  # Create the runner
+  rn = Runner()
+  # Init when meta was changed
+  rn.init_fsm_engine(fsm_conf, flow_meta)
+  # Restart when a new image was passed 
+  rn.start(image)
 
+  if kwargs["step"] == "no":
+    run_all(rn, flow_meta)
+  else:
+    run_by_step(rn, flow_meta)   
 
 # Entry point
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
-config.json
 .vscode
 flow_runner/__pycache__
+flow_runner/exec_cntx/__pycache__
+frfsm/__pycache__
 flow_runner.egg-info
