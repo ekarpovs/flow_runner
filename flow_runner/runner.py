@@ -86,9 +86,6 @@ class Runner():
 
     kwargs = self.fsm.context.get('kwargs')
     idx = self.fsm.context.get_current_state_id()
-    max_idx = self.engine.get_number_of_states()
-    if idx < max_idx -1:
-      cntx.set_kwargs(kwargs)
 
     return idx, kwargs['image']
 
