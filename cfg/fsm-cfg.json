@@ -5,7 +5,7 @@
       "../modules-and-worksheets/modules",
       "../modules-and-worksheets/modules-common"
     ],
-    "user-action-wrapper-path": "../runner/frfsm",
+    "user-action-wrapper-path": "../flow_runner/frfsm",
     "user-action-wrapper-name": "frfsm-actions.flow_runner_action",
     "events": [
       "next",

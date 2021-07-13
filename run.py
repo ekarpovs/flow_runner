@@ -67,17 +67,17 @@ def run_by_step(runner, flow_meta):
     idx = run_step(runner, event, step_meta)
 
 def run_all(runner, flow_meta):
-    idx = 0
-    n = runner.get_number_of_states()
-    for idx in range(n): 
-      step_meta = flow_meta[idx]
-      idx = run_step(runner, 'next', step_meta)
+  idx = 0
+  n = runner.get_number_of_states()
+  for idx in range(n): 
+    step_meta = flow_meta[idx]
+    idx = run_step(runner, 'next', step_meta)
 
 
 def run_step(runner, event, step_meta):
-    idx, cv2image = runner.put_event(event, step_meta)
-    storeImage(kwargs["input"], kwargs["output"], cv2image, idx)
-    return idx
+  idx, cv2image = runner.put_event(event, step_meta)
+  storeImage(kwargs["input"], kwargs["output"], cv2image, idx)
+  return idx
 
 
 # Main function - the runner's client

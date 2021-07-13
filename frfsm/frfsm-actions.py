@@ -16,7 +16,7 @@ def flow_runner_action(oper_impl):
       return step, kwargs
 
     def map_after(io):
-      if not context.get('last-state-executed'):
+      if not context.get('last-state-executed') or not context.get('current_step') :
         stack = context.get('stack')
         cntx = Cntx()
         cntx.put_io(io)
@@ -35,11 +35,23 @@ def flow_runner_action(oper_impl):
   return execute
 
 
+
+# FRFsm actions
+
 def flow_back_step(context):
   stack = context.get('stack')
   if stack.size() > 1:
     stack.pop()
-  
+  return context
+
+
+def set_current_step(context):
+  context.put('current_step', True)
+  return context
+
+def reset_current_step(context):
+  context.put('current_step', False)
+  return context
 
 def last_state_executed(context):
   '''

@@ -86,6 +86,8 @@ class Runner():
     return idx, io['image']
 
   def current(self, step_meta):
+    self.put_step_meta(step_meta)
+    self.fsm.dispatch('current')
     idx = self.get_step_id()
     io = self.get_step_io()
     return idx, io['image']
