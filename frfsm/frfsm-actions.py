@@ -16,7 +16,7 @@ def flow_runner_action(oper_impl):
       return step, kwargs
 
     def map_after(io):
-      if not context.get('last-state-executed') or not context.get('current_step') :
+      if not context.get('last-state-executed') and not context.get('current_state_executed') :
         stack = context.get('stack')
         cntx = Cntx()
         cntx.put_io(io)
@@ -45,12 +45,12 @@ def flow_back_step(context):
   return context
 
 
-def set_current_step(context):
-  context.put('current_step', True)
+def current_state_executed(context):
+  context.put('current_state_executed', True)
   return context
 
-def reset_current_step(context):
-  context.put('current_step', False)
+def current_state_not_executed(context):
+  context.put('current_state_executed', False)
   return context
 
 def last_state_executed(context):
