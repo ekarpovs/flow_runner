@@ -1,16 +1,16 @@
 class Cntx:
   def __init__(self):
-    self.step_meta = None
-    self.kwargs = None
+    self.meta = None
+    self.io = None
 
-  def set_step_meta(self, step_meta):
-    self.step_meta = step_meta
+  def put_meta(self, meta):
+    self.meta = meta
 
-  def set_kwargs(self, kwargs):
-    self.kwargs = kwargs
+  def put_io(self, io):
+    self.io = io
 
-  def get_step_meta(self):
-    return self.step_meta
+  def get_meta(self):
+    return self.meta
 
-  def get_kwargs(self):
-    return self.kwargs
+  def get_io(self):
+    return self.io
