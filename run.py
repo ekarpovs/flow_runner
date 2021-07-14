@@ -90,10 +90,11 @@ def main(**kwargs):
 
   # Create the runner
   rn = Runner()
-  # Init when meta was changed
+  # Recreate engine when a flow meta changed
   rn.init_fsm_engine(fsm_conf, flow_meta)
   # Restart when a new image was passed 
-  rn.start(image)
+  rn.start()
+  rn.init_io(image)
 
   if kwargs["step"] == "no":
     run_all(rn, flow_meta)

@@ -30,45 +30,39 @@ class Runner():
 
   # runtime
   #  
-  def init_io_stack(self, cv2image):
-    # Create init input context
-    cntx = Cntx()
-    io = {}
-    io['image'] = cv2image.copy()
-    io['orig'] = cv2image.copy()
-    cntx.put_io(io)
-    # Create io stack
-    stack = Stack()
-    stack.push(cntx)
-    # Store it into fsm context object
-    self.fsm.context.put('stack', stack)
-
-
-  def put_step_meta(self, step_meta):
-    # Get last item from fsm context object
-    stack = self.fsm.context.get('stack')
-    cntx = stack.peek()
-    cntx.put_meta(step_meta)
-
-  def get_step_meta(self):
-    stack = self.fsm.context.get('stack')
-    cntx = stack.peek()
-    return cntx.get_meta()
-
   def get_step_io(self):
     stack = self.fsm.context.get('stack')
-    cntx = stack.peek()
-    return cntx.get_io()
+    if stack.isEmpty():
+      io = self.fsm.context.get('input')
+    else:
+      cntx = stack.peek()
+      io = cntx.get_io()
+    return io
 
   def get_step_id(self):
      return self.fsm.context.get_current_state_id()
 
 
-  def start(self, cv2image):
-    self.init_io_stack(cv2image)
+  def start(self):
     # start fsm from first state
+    stack = Stack()
+    self.fsm.context.put('stack', stack)
     self.fsm.start(self.engine.fsm_impl)   
     return
+
+  def init_io(self, cv2image):
+    stack = self.fsm.context.get('stack')
+    if not stack.isEmpty():
+      stack.reset()
+    # Create init input object
+    io = {}
+    io['image'] = cv2image.copy()
+    io['orig'] = cv2image.copy()
+    # Store it into fsm context object
+    self.fsm.context.put('input', io)
+
+  def put_step_meta(self, step_meta):
+    self.fsm.context.put('step', step_meta)
 
   def put_event(self, event, step_meta=None):
     if event == 'next':
