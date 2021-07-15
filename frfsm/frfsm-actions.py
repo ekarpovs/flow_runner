@@ -10,24 +10,25 @@ def flow_runner_action(oper_impl):
         io = context.get('input')
         kwargs = copy.deepcopy(io)
       else:
-        if context.get('current_state_executed'):
-          _pop(context)
         cntx = stack.peek()
         kwargs = copy.deepcopy(cntx.get_io())
       step = context.get('step')
       if 'params' in step:
         step = step['params']
         if 'useorig' in step and step['useorig']:
-          kwargs['image'] = copy.deepcopy(kwargs['orig'])
+          kwargs['image'] = kwargs['orig'].copy()
       return step, kwargs
 
     def map_after(io):
-      if not context.get('last-state-executed') and not context.get('current_state_executed'):
+      if not context.get('last-state-executed') and not context.get('current-state-executed'):
         stack = context.get('stack')
         cntx = Cntx()
         cntx.put_io(io)
         stack.push(cntx)
         print("put:", stack.size())
+        #  current output
+        io = copy.deepcopy(kwargs)
+        context.put('output', io)
       return
 
     __name__ = oper_impl.__name__
@@ -52,14 +53,20 @@ def _pop(context):
   stack = context.get('stack')
   stack.pop()
   print("pop:", stack.size())
+  if not stack.isEmpty():
+    cntx = stack.peek()
+    io = copy.deepcopy(cntx.get_io())
+  else:
+    io = context.get('input')
+  context.put('output', io)
   return context
 
 def current_state_executed(context):
-  context.put('current_state_executed', True)
+  context.put('current-state-executed', True)
   return context
 
 def current_state_not_executed(context):
-  context.put('current_state_executed', False)
+  context.put('current-state-executed', False)
   return context
 
 def last_state_executed(context):
@@ -102,7 +109,7 @@ def reset_context(context):
   Returns:
   - the context.
   '''
-  context = current_state_not_executed(context)
+  # context = current_state_not_executed(context)
   context = last_state_not_executed(context)
   # stack = context.get('stack')
   # size = stack.size()

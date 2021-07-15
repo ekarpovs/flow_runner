@@ -17,11 +17,11 @@ class Runner():
   # and create fsm engine  
   def init_fsm_engine(self, fsm_conf, flow_meta):
     fc = FlowConverter(flow_meta)
-    # fsm_def = fc.convert()
+    fsm_def = fc.convert()
     # with open('../data/fsm-def/edge-fsm.json', 'w') as fp:
     #   json.dump(fsm_def, fp)
-    with open('../data/fsm-def/edge-fsm.json') as F:
-      fsm_def = json.load(F)
+    # with open('../data/fsm-def/edge-fsm.json') as F:
+    #   fsm_def = json.load(F)
     self.engine = Frfsm(fsm_conf, fsm_def)
    
   # getters
@@ -31,12 +31,7 @@ class Runner():
   # runtime
   #  
   def get_step_io(self):
-    stack = self.fsm.context.get('stack')
-    if stack.isEmpty():
-      io = self.fsm.context.get('input')
-    else:
-      cntx = stack.peek()
-      io = cntx.get_io()
+    io = self.fsm.context.get('output')
     return io
 
   def get_step_id(self):
@@ -52,7 +47,7 @@ class Runner():
 
   def init_io(self, cv2image):
     stack = self.fsm.context.get('stack')
-    if not stack.isEmpty():
+    if stack and not stack.isEmpty():
       stack.reset()
     # Create init input object
     io = {}
