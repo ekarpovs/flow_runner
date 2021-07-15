@@ -18,7 +18,7 @@ class Runner():
   def init_fsm_engine(self, fsm_conf, flow_meta):
     fc = FlowConverter(flow_meta)
     fsm_def = fc.convert()
-    # with open('../data/fsm-def/edge-fsm.json', 'w') as fp:
+    # with open('../data/fsm-def/edge-fsm-1.json', 'w') as fp:
     #   json.dump(fsm_def, fp)
     # with open('../data/fsm-def/edge-fsm.json') as F:
     #   fsm_def = json.load(F)

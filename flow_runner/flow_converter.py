@@ -7,7 +7,7 @@ class StateOffset():
   REARWARD, NO, FORWARD = range(-1,2)
 
 class StateOrder():
-  FIRST, LAST, REGULAR = range(3)
+  REGULAR, LAST = range(2)
 
 
 
@@ -18,19 +18,15 @@ class FlowConverter():
     # TEMPLATE_TRANSITION = ["name", "src", "event", "target", "action", "start-action", "end-action"]
     self.states_transitions = [
       [
-        self.def_transition(["", "", "next", "", "", "", ""]),
-        self.def_transition(["", "", "current", "", "", "", ""])
+        self.def_transition(["", "", "next", "", "", "____frfsm-actions.store", ""]),
+        self.def_transition(["", "", "current", "", "", "____frfsm-actions.not_store", ""]),
+        self.def_transition(["", "", "prev", "", "____frfsm-actions.back", "", ""]),
       ],
       [
-        self.def_transition(["", "", "next", "", "", "", "____frfsm-actions.last_state_executed"]),
-        self.def_transition(["", "", "current", "", "", "", ""]),
-        self.def_transition(["", "", "prev", "", "", "", "____frfsm-actions.last_state_not_executed"]),
-      ],       
-      [
-        self.def_transition(["", "", "next", "", "", "", ""]),
-        self.def_transition(["", "", "current", "", "", "", ""]),
-        self.def_transition(["", "", "prev", "", "", "", ""]),
-      ]
+        self.def_transition(["", "", "next", "", "", "", "____frfsm-actions.not_store"]),
+        self.def_transition(["", "", "current", "", "", "", "____frfsm-actions.not_store"]),
+        self.def_transition(["", "", "prev", "", "____frfsm-actions.back", "", ""]),
+      ]       
     ]
 
 # Utilites
@@ -65,9 +61,7 @@ class FlowConverter():
 
     def converter(idx):
       def state_order(idx):
-        if idx == 0:
-          return  StateOrder.FIRST
-        elif idx == len(self.meta)-1:
+        if idx == len(self.meta)-1:
           return  StateOrder.LAST
         else:
           return StateOrder.REGULAR
@@ -89,7 +83,10 @@ class FlowConverter():
           else:
             tr['target'] = state_name
         elif event_name == 'prev':
-          tr['target'], _ = step_to_state_def(idx, StateOffset.REARWARD)
+          if idx == 0:
+            tr['target'], _ = step_to_state_def(idx)
+          else:
+            tr['target'], _ = step_to_state_def(idx, StateOffset.REARWARD)
         else:
           tr['action'] = act_name
           tr['target'] = state_name
@@ -110,7 +107,6 @@ class FlowConverter():
       convert_step_meta = self.step_converter()
       state_name, trans_def = convert_step_meta(i)
       if i == 0:
-        state_entry_action = '____frfsm-actions.reset_context' 
         first_state_name = state_name
       # TEMPLATE_STATE = ["name", "entry-action", "exit-action", "transitions"]
       state_def = self.def_state([state_name, state_entry_action, state_exit_action, trans_def])
