@@ -1,17 +1,17 @@
 import copy
 from flow_runner.exec_cntx import Cntx
 
-# Flow runner user action's wrapper
+# Flow user action's wrapper
 def flow_runner_action(oper_impl):
   def execute(context):
     def map_before():
       stack = context.get('stack')
       if stack.isEmpty():
         io = context.get('input')
-        kwargs = copy.deepcopy(io)
       else:
         cntx = stack.peek()
-        kwargs = copy.deepcopy(cntx.get_io())
+        io = cntx.get_io()
+      kwargs = copy.deepcopy(io)
       step = context.get('step')
       if 'params' in step:
         step = step['params']
@@ -20,16 +20,16 @@ def flow_runner_action(oper_impl):
       return step, kwargs
 
     def map_after(io):
-      if not context.get('last-state-executed') and not context.get('current-state-executed'):
+      if context.get('store-state'):
         stack = context.get('stack')
         cntx = Cntx()
-        cntx.put_io(io)
+        cntx.put_io(copy.deepcopy(io))
         stack.push(cntx)
         print("put:", stack.size())
         #  current output
-        io = copy.deepcopy(kwargs)
-        context.put('output', io)
-      return
+      io = copy.deepcopy(kwargs)
+      context.put('output', io)
+      return context
 
     __name__ = oper_impl.__name__
     __module__ = oper_impl.__module__
@@ -37,7 +37,7 @@ def flow_runner_action(oper_impl):
     
     step, kwargs = map_before()
     kwargs = copy.deepcopy(oper_impl(step, **kwargs))   
-    map_after(kwargs)
+    context = map_after(kwargs)
     return context
 
   return execute
@@ -45,7 +45,15 @@ def flow_runner_action(oper_impl):
 
 
 # FRFsm actions
-def flow_back_step(context):
+def not_store(context):
+  context.put('store-state', False)
+  return context
+
+def store(context):
+  context.put('store-state', True)
+  return context
+
+def back(context):
   context = _pop(context)
   return context
 
@@ -53,70 +61,15 @@ def _pop(context):
   stack = context.get('stack')
   stack.pop()
   print("pop:", stack.size())
-  if not stack.isEmpty():
-    cntx = stack.peek()
-    io = copy.deepcopy(cntx.get_io())
-  else:
+  if stack.isEmpty():
     io = context.get('input')
-  context.put('output', io)
+  else:
+    cntx = stack.peek()
+    io = cntx.get_io()
+  context.put('output', copy.deepcopy(io))
   return context
 
-def current_state_executed(context):
-  context.put('current-state-executed', True)
-  return context
-
-def current_state_not_executed(context):
-  context.put('current-state-executed', False)
-  return context
-
-def last_state_executed(context):
-  '''
-  Sets flag - last state next/current event was executed
-
-  arguments:
-  - context
-
-  Returns:
-  - the context['last-state-executed'].
-  '''
-  context.put('last-state-executed', True)
-  
-  return context
-
-
-def last_state_not_executed(context):
-  '''
-  Resets flag - last state next/current event was executed
-
-  arguments:
-  - context
-
-  Returns:
-  - the context['last-state-executed'].
-  '''
-  context.put('last-state-executed', False)
-  
-  return context
-
-
-def reset_context(context):
-  '''
-  Resets all flags
-
-  arguments:
-  - context
-
-  Returns:
-  - the context.
-  '''
-  # context = current_state_not_executed(context)
-  context = last_state_not_executed(context)
-  # stack = context.get('stack')
-  # size = stack.size()
-  # for i in range(size):
-  #   _pop(context)
-  return context
-
+# STM actions
 
 def forinrange_entry(context):
   '''
