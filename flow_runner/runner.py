@@ -1,7 +1,7 @@
 import json # temporary!!!
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
-from .flow_converter import FlowConverter
+from flow_converter import FlowConverter
 from .exec_cntx import Cntx
 from .exec_cntx import Stack
 
@@ -15,13 +15,7 @@ class Runner():
   # the runner's life cycle
   # converts flow defenition into fsm definition 
   # and create fsm engine  
-  def init_fsm_engine(self, fsm_conf, flow_meta):
-    fc = FlowConverter(flow_meta)
-    fsm_def = fc.convert()
-    # with open('../data/fsm-def/edge-fsm-1.json', 'w') as fp:
-    #   json.dump(fsm_def, fp)
-    # with open('../data/fsm-def/edge-fsm.json') as F:
-    #   fsm_def = json.load(F)
+  def init_fsm_engine(self, fsm_conf, fsm_def):
     self.engine = Frfsm(fsm_conf, fsm_def)
    
   # getters
@@ -59,30 +53,19 @@ class Runner():
   def put_step_meta(self, step_meta):
     self.fsm.context.put('step', step_meta)
 
-  def put_event(self, event, step_meta=None):
+  def map_event_name(self, event):
     if event == 'next':
-      return self.next(step_meta)
-    if event == 'prev':
-      return self.prev()
-    if event == 'current':
-      return self.current(step_meta)
+      name = self.fsm.context.get_current_state_name()
+      last_stm = self.fsm.context.get('last_stm')
+      if last_stm and last_stm['name'] == name and last_stm['params']['end']:
+        event = 'next_end'
+    self.fsm.context.put('event', event)
+    return event
 
-  def next(self, step_meta):
+  def dispatch_event(self, event, step_meta=None):
     self.put_step_meta(step_meta)
-    self.fsm.dispatch('next')
-    idx = self.get_step_id()
-    io = self.get_step_io()
-    return idx, io['image']
-
-  def current(self, step_meta):
-    self.put_step_meta(step_meta)
-    self.fsm.dispatch('current')
-    idx = self.get_step_id()
-    io = self.get_step_io()
-    return idx, io['image']
-
-  def prev(self):
-    self.fsm.dispatch('prev')
+    event = self.map_event_name(event)
+    self.fsm.dispatch(event)
     idx = self.get_step_id()
     io = self.get_step_io()
     return idx, io['image']

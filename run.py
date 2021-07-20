@@ -7,7 +7,8 @@ import json
 from os import pathsep
 import cv2
 
-from flow_runner.runner import Runner
+from flow_runner import Runner
+from flow_converter import FlowConverter
 
 # Construct the argument parser and parse the arguments
 def parseArgs():
@@ -75,7 +76,7 @@ def run_all(runner, flow_meta):
 
 
 def run_step(runner, event, step_meta):
-  idx, cv2image = runner.put_event(event, step_meta)
+  idx, cv2image = runner.dispatch_event(event, step_meta)
   storeImage(kwargs["input"], kwargs["output"], cv2image, idx)
   return idx
 
@@ -89,9 +90,16 @@ def main(**kwargs):
     meta['id'] = i
 
   # Create the runner
+  fc = FlowConverter(flow_meta)
+  fsm_def = fc.convert()
+  # with open('../data/fsm-def/demo-fsm-1.json', 'w') as fp:
+  #   json.dump(fsm_def, fp)
+  # with open('../data/fsm-def/demo-fsm-1.json') as F:
+  # with open('../data/fsm-def/edge-fsm.json') as F:
+  #   fsm_def = json.load(F)
   rn = Runner()
   # Recreate engine when a flow meta changed
-  rn.init_fsm_engine(fsm_conf, flow_meta)
+  rn.init_fsm_engine(fsm_conf, fsm_def)
   # Restart when a new image was passed 
   rn.start()
   rn.init_io(image)

@@ -70,20 +70,63 @@ def _pop(context):
   return context
 
 # STM actions
-
-def forinrange_entry(context):
-  '''
-  Check forinrage condition
-  '''
-  print("forinrange_entry", context)
-
-  return context
-
-
 def forinrange_exit(context):
   '''
   Change forinrage condition
   '''
-  print("forinrange_exit", context)
+  state_stm = context.get('last_stm')
+  event = context.get('event')
+  if event == 'next':
+    step = context.get('step')
+    # "params":{"start": 0, "stop": 60, "step": 15, "i": "angle", "include": 1}
+    params = step['params']
+    start = params['start']
+    stop = params['stop']
+    step = params['step']
+    name = params['i']
+    include = params['include']
 
+    state_name = context.get_current_state_name()
+    if state_stm:
+      # remove from stack previous result (all states above the stm)
+      count = state_stm['params']['count']
+      end = state_stm['params']['end']
+      if count > 0:
+        stack = context.get('stack')
+        for i in range(include):
+          stack.pop()
+    else:
+      # the first time
+      end = False
+      count = 0
+    value = start + step*count
+    if value >= stop:
+      end = True
+    count += 1 
+      # create/change current context for the stm
+    state_stm = {'name': state_name, 'params': {'count': count, 'end': end, 'name': name, 'value': value}}
+    context.put('last_stm', state_stm)
+  elif event == 'prev' or event == 'next_end':
+    if state_stm:
+      # remove current context for the stm
+      context.put('last_stm', None)
   return context
+
+
+def forinrange_included(context):
+  '''
+  Is used as exit action for first forinrange state
+  '''
+  event = context.get('event')
+  if event == 'next':
+    stm_params = context.get('last_stm')['params']
+    name = stm_params['name']
+    value = stm_params['value']
+    # prepare input for an included state
+    step = context.get('step')
+    params = step['params']
+    # map 'i' 
+    params[name] = value
+  return context
+
+
