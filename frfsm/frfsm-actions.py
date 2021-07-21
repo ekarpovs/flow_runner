@@ -112,10 +112,10 @@ def forinrange_exit(context):
       context.put('last_stm', None)
   return context
 
-
+# Move to stm exit actions??? Need to know meta.
 def forinrange_included(context):
   '''
-  Is used as exit action for first forinrange state
+  Is used as exit action for first inside forinrange state
   '''
   event = context.get('event')
   if event == 'next':

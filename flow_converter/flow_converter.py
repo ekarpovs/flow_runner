@@ -15,12 +15,43 @@ class FlowConverter():
       state_exit_action = ""
 
       convert_step_meta = self.step_converter.convert()
-      state_name, trans_def = convert_step_meta(i)
+      state_name, trans_def, state_entry_action, state_exit_action = convert_step_meta(i)
       if i == 0:
         first_state_name = state_name
       # TEMPLATE_STATE = ["name", "entry-action", "exit-action", "transitions"]
       state_def = self.templates.def_state([state_name, state_entry_action, state_exit_action, trans_def])
       states_def.append(state_def)
+    # Decorate states by stm elements
+    if self.meta_has_statement():
+      states_def = self.decorate(states_def)
     # TEMPLATE_FSM = ["info", "context-name", "init-action", "first-state", "states"]    
     fsm_def = self.templates.def_fsm(['', '', '', first_state_name, states_def])
+
     return fsm_def
+
+  def meta_has_statement(self):
+    return 'stm' in {k for m in self.meta for k in m.keys()}
+
+  def state_is_statement(self, state_def):
+    stm_name = state_def['name'].split('-')[1]
+    return stm_name == 'forinrange'
+    
+  def decorate(self, states_def):
+    for idx, state_def in enumerate(states_def):
+      if self.state_is_statement(state_def):
+        state_name = state_def['name'] 
+        stm_name = state_name.split('-')[1]
+        if stm_name == 'forinrange':
+          state_def['exit-action'] = '____frfsm-actions.forinrange_exit'
+          next_state_def = states_def[idx+1]
+          next_state_def['exit-action'] = '____frfsm-actions.forinrange_included'
+          # Change the last state in the stm transition destination
+          step_meta = self.meta[idx]
+          include = step_meta['params']['include']
+          last_state_def_inside_stm = states_def[idx+include]
+          transitions_def = last_state_def_inside_stm['transitions']
+          for tr in transitions_def:
+            if tr['event'] == 'next':
+              tr['target'] = state_name
+
+    return states_def
