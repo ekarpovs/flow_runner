@@ -10,8 +10,8 @@ class Templates():
       ],
       # last
       [
-        self.def_transition(["", "", "next", "", "", "", "____frfsm-actions.not_store"]),
-        self.def_transition(["", "", "current", "", "", "", "____frfsm-actions.not_store"]),
+        self.def_transition(["", "", "next", "", "", "____frfsm-actions.not_store", ""]),
+        self.def_transition(["", "", "current", "", "", "____frfsm-actions.not_store", ""]),
         self.def_transition(["", "", "prev", "", "____frfsm-actions.back", "", ""]),
       ],
       # forinrange
