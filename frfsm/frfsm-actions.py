@@ -93,8 +93,10 @@ def forinrange_exit(context):
       end = state_stm['params']['end']
       if count > 0:
         stack = context.get('stack')
-        for i in range(include):
+        for i in range(include+1):
+          # print('forinrange exit - stack size - before:', stack.size())
           stack.pop()
+          # print('forinrange exit - stack size - after:', stack.size())
     else:
       # the first time
       end = False
@@ -108,6 +110,8 @@ def forinrange_exit(context):
     context.put('last_stm', state_stm)
   elif event == 'prev' or event == 'next_end':
     if state_stm:
+      stack = context.get('stack')
+      stack.pop()
       # remove current context for the stm
       context.put('last_stm', None)
   return context
@@ -119,14 +123,16 @@ def forinrange_included(context):
   '''
   event = context.get('event')
   if event == 'next':
-    stm_params = context.get('last_stm')['params']
-    name = stm_params['name']
-    value = stm_params['value']
-    # prepare input for an included state
-    step = context.get('step')
-    params = step['params']
-    # map 'i' 
-    params[name] = value
+    last_stm = context.get('last_stm')
+    if last_stm is not None:
+      stm_params = last_stm['params']
+      name = stm_params['name']
+      value = stm_params['value']
+      # prepare input for an included state
+      step = context.get('step')
+      params = step['params']
+      # map 'i' 
+      params[name] = value
   return context
 
 
