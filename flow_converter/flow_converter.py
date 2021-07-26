@@ -1,3 +1,4 @@
+import json
 from .templates import Templates 
 from .step_converter import StepConverter
 
@@ -7,13 +8,12 @@ class FlowConverter():
     self.templates = Templates()
     self.step_converter = StepConverter(self.meta)
 
-  def convert(self):
+  def meta_to_fsm_def(self):
     states_def = []
     first_state_name = None
     for i, _ in enumerate(self.meta):
       state_entry_action = "" 
       state_exit_action = ""
-
       convert_step_meta = self.step_converter.convert()
       state_name, trans_def, state_entry_action, state_exit_action = convert_step_meta(i)
       if i == 0:
@@ -26,7 +26,14 @@ class FlowConverter():
       states_def = self.decorate(states_def)
     # TEMPLATE_FSM = ["info", "context-name", "init-action", "first-state", "states"]    
     fsm_def = self.templates.def_fsm(['', '', '', first_state_name, states_def])
-
+    return fsm_def
+    
+  def convert(self, fsm_def_path=''):
+    if fsm_def_path is not '':
+      with open(fsm_def_path) as F:
+        fsm_def = json.load(F)
+    else:      
+      fsm_def = self.meta_to_fsm_def()
     return fsm_def
 
   def meta_has_statement(self):
@@ -53,5 +60,4 @@ class FlowConverter():
           for tr in transitions_def:
             if tr['event'] == 'next':
               tr['target'] = state_name
-
     return states_def
