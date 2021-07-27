@@ -15,6 +15,8 @@ def parseArgs():
   ap = argparse.ArgumentParser(description="flow runner fsm")
   ap.add_argument("-m", "--meta", required = True,
 	help = "full path to the meta data file")
+  ap.add_argument("-d", "--def", required = False,
+	help = "full path to the fsm definition file")
   ap.add_argument("-i", "--input", required = True,
 	help = "full path to the input file(s)")
   ap.add_argument("-o", "--output", required = False,
@@ -42,9 +44,6 @@ def readJson(ffn):
 def readConfig():
   return readJson('./cfg/fsm-cfg.json')
 
-def readMeta(ffn):
-  return readJson(ffn)
-
 def readImage(ffn):
   image = cv2.imread(ffn)
   return image
@@ -64,7 +63,9 @@ def run_by_step(runner, flow_meta):
     if event == 'q':
       return
 
-    step_meta = flow_meta[idx]
+    step_meta = ''
+    if idx < len(flow_meta):
+      step_meta = flow_meta[idx]
     idx = run_step(runner, event, step_meta)
 
 def run_all(runner, flow_meta):
@@ -85,18 +86,16 @@ def run_step(runner, event, step_meta):
 def main(**kwargs): 
   fsm_conf = readConfig()
   image = readImage(kwargs["input"])
-  flow_meta = readMeta(kwargs['meta'])
+  flow_meta = readJson(kwargs['meta'])
+  # flow_meta.append({"stm": "glbstm.end"})
   for i, meta in enumerate(flow_meta):
     meta['id'] = i
-
+  if kwargs['def']:
+    fsm_def = readJson(kwargs['def'])
+  else:
+    fc = FlowConverter(flow_meta)
+    fsm_def = fc.convert()
   # Create the runner
-  fc = FlowConverter(flow_meta)
-  fsm_def = fc.convert()
-  # with open('../data/fsm-def/demo-fsm-1.json', 'w') as fp:
-  #   json.dump(fsm_def, fp)
-  # with open('../data/fsm-def/demo-fsm-1.json') as F:
-  # with open('../data/fsm-def/edge-fsm.json') as F:
-  #   fsm_def = json.load(F)
   rn = Runner()
   # Recreate engine when a flow meta changed
   rn.init_fsm_engine(fsm_conf, fsm_def)

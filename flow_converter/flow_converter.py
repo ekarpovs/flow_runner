@@ -1,9 +1,9 @@
-import json
 from .templates import Templates 
 from .step_converter import StepConverter
 
 class FlowConverter():
   def __init__(self, meta):
+    meta.append({"stm": "glbstm.end"})
     self.meta = meta
     self.templates = Templates()
     self.step_converter = StepConverter(self.meta)
@@ -27,13 +27,9 @@ class FlowConverter():
     # TEMPLATE_FSM = ["info", "context-name", "init-action", "first-state", "states"]    
     fsm_def = self.templates.def_fsm(['', '', '', first_state_name, states_def])
     return fsm_def
-    
-  def convert(self, fsm_def_path=''):
-    if fsm_def_path is not '':
-      with open(fsm_def_path) as F:
-        fsm_def = json.load(F)
-    else:      
-      fsm_def = self.meta_to_fsm_def()
+
+  def convert(self):
+    fsm_def = self.meta_to_fsm_def()
     return fsm_def
 
   def meta_has_statement(self):

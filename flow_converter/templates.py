@@ -3,15 +3,14 @@ class Templates():
     # Predefined transitions
     # TEMPLATE_TRANSITION = ["name", "src", "event", "target", "action", "start-action", "end-action"]
     self.states_transitions = [
+      # exec
       [
         self.def_transition(["", "", "next", "", "", "____frfsm-actions.store", ""]),
         self.def_transition(["", "", "current", "", "", "____frfsm-actions.not_store", ""]),
         self.def_transition(["", "", "prev", "", "____frfsm-actions.back", "", ""]),
       ],
-      # last
+      # end
       [
-        self.def_transition(["", "", "next", "", "", "____frfsm-actions.not_store", ""]),
-        self.def_transition(["", "", "current", "", "", "____frfsm-actions.not_store", ""]),
         self.def_transition(["", "", "prev", "", "____frfsm-actions.back", "", ""]),
       ],
       # forinrange
