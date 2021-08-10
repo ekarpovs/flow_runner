@@ -87,7 +87,7 @@ def main(**kwargs):
   fsm_conf = readConfig()
   image = readImage(kwargs["input"])
   flow_meta = readJson(kwargs['meta'])
-  # flow_meta.append({"stm": "glbstm.end"})
+  flow_meta.append({"stm": "glbstm.end"})
   for i, meta in enumerate(flow_meta):
     meta['id'] = i
   if kwargs['def']:

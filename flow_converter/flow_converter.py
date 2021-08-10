@@ -3,7 +3,6 @@ from .step_converter import StepConverter
 
 class FlowConverter():
   def __init__(self, meta):
-    meta.append({"stm": "glbstm.end"})
     self.meta = meta
     self.templates = Templates()
     self.step_converter = StepConverter(self.meta)
