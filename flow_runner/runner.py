@@ -12,6 +12,9 @@ class Runner():
     # io storage
     # self.execution_stack = Stack()
 
+  
+  def initialized(self):
+    return self.engine is not None
   # the runner's life cycle
   # converts flow defenition into fsm definition 
   # and create fsm engine  
