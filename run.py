@@ -22,7 +22,7 @@ def parseArgs():
   ap.add_argument("-o", "--output", required = False,
 	help = "full path to the output file(s)")
   ap.add_argument("-s", "--step", required = False,
-  default="no",
+  default="no", 
 	help = "step mode")
   ap.add_argument("-t", "--trace", required = False,
   default="no",
@@ -43,6 +43,14 @@ def readJson(ffn):
 # Read configuration files
 def readConfig():
   return readJson('./cfg/fsm-cfg.json')
+
+def storeFsmDef(fsm_def):
+  out_path = '../data/fsm-def'
+  ffn = "{}/fsm-def.json".format(out_path)
+  json_object = json.dumps(fsm_def, indent = 2) 
+  with open(ffn, "w") as outfile: 
+    outfile.write(json_object)
+  return
 
 def readImage(ffn):
   image = cv2.imread(ffn)
@@ -71,7 +79,7 @@ def run_by_step(runner, flow_meta):
 def run_all(runner, flow_meta):
     n = runner.get_number_of_states()
     idx = 0
-    while (idx < n-2):
+    while (idx < n-1):
       step_meta = flow_meta[idx]
       idx = run_step(runner, 'next', step_meta)
     run_step(runner, 'next', step_meta)
@@ -96,6 +104,9 @@ def main(**kwargs):
   else:
     fc = FlowConverter(flow_meta)
     fsm_def = fc.convert()
+    if kwargs['trace'] == 'yes':
+      storeFsmDef(fsm_def)
+
   # Create the runner
   rn = Runner()
   # Recreate engine when a flow meta changed
