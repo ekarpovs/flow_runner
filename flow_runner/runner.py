@@ -60,7 +60,7 @@ class Runner():
     if event == 'next':
       name = self.fsm.context.get_current_state_name()
       last_stm = self.fsm.context.get('last_stm')
-      if last_stm and last_stm['name'] == name and last_stm['params']['end']:
+      if last_stm and last_stm.get('name') == name and last_stm.get('params').get('end'):
         event = 'next_end'
     self.fsm.context.put('event', event)
     return event

@@ -42,8 +42,6 @@ def flow_runner_action(oper_impl):
 
   return execute
 
-
-
 # FRFsm actions
 def not_store(context):
   context.put('store-state', False)
@@ -70,6 +68,25 @@ def _pop(context):
   return context
 
 # STM actions
+# Move to stm exit actions??? Need to know meta.
+def stm_included(context):
+  '''
+  Is used as exit action for the first, inside forinrange stm, state
+  '''
+  event = context.get('event')
+  if event == 'next':
+    last_stm = context.get('last_stm')
+    if last_stm is not None:
+      stm_params = last_stm.get('params')
+      name = stm_params.get('name')
+      value = stm_params.get('value')
+      # prepare input for an included state
+      step = context.get('step')
+      params = step.get('params')
+      # map 'i' 
+      params[name] = value
+  return context
+
 def forinrange_exit(context):
   '''
   Change forinrage condition
@@ -116,23 +133,46 @@ def forinrange_exit(context):
       context.put('last_stm', None)
   return context
 
-# Move to stm exit actions??? Need to know meta.
-def forinrange_included(context):
+def while_exit(context):
   '''
-  Is used as exit action for first inside forinrange state
+  Change forinrage condition
   '''
+  state_stm = context.get('last_stm')
   event = context.get('event')
   if event == 'next':
-    last_stm = context.get('last_stm')
-    if last_stm is not None:
-      stm_params = last_stm['params']
-      name = stm_params['name']
-      value = stm_params['value']
-      # prepare input for an included state
-      step = context.get('step')
-      params = step['params']
-      # map 'i' 
-      params[name] = value
-  return context
+    step = context.get('step')
+    # "params":{"start": 0, "stop": 60, "step": 15, "i": "angle", "include": 1}
+    params = step.get('params')
+    condition = params.get('cond')
+    include = params.get('include')
 
+    state_name = context.get_current_state_name()
+    if state_stm:
+      # remove from stack previous result (all states above the stm)
+      end = state_stm.get('params').get('end')
+      if condition:
+        stack = context.get('stack')
+        for i in range(include+1):
+          # print('forinrange exit - stack size - before:', stack.size())
+          stack.pop()
+          # print('forinrange exit - stack size - after:', stack.size())
+    else:
+      # the first time
+      end = False
+      condition = True
+
+    if not condition:
+      end = True
+      # create/change current context for the stm
+    state_stm = {'name': state_name, 'params': {'cond': condition, 'end': end}}
+    context.put('last_stm', state_stm)
+
+  elif event == 'prev' or event == 'next_end':
+    if state_stm:
+      stack = context.get('stack')
+      stack.pop()
+      # remove current context for the stm
+      context.put('last_stm', None)
+
+  return context
 

@@ -2,7 +2,7 @@ import copy
 from .templates import Templates 
 
 class StateType():
-  EXEC, STM_END, STM_FORINRANGE = range(3)
+  EXEC, STM_END, STM_FORINRANGE, STM_WHILE = range(4)
 
 class StateOffset():
   REARWARD, NO, FORWARD = range(-1,2)
@@ -37,15 +37,24 @@ class StepConverter():
           stm = step_meta['stm']
           if stm == 'glbstm.end':
             return StateType.STM_END
-          return StateType.STM_FORINRANGE
+          if stm == 'glbstm.forinrangestm':
+            return StateType.STM_FORINRANGE
+          if stm == 'glbstm.whilestm':
+            return StateType.STM_WHILE
       
       state_entry_action = ''
       state_exit_action = ''
       state_type = state_type(idx)
-      if state_type == StateType.STM_FORINRANGE:
-        step_params = step_meta['params']
-        incl = step_params['include']
-      state_transitions = self.states_transitions[state_type]
+      state_transitions = []
+      # for all stms - begin
+      # if state_type == StateType.STM_FORINRANGE:
+      if state_type > StateType.STM_END:
+        step_params = step_meta.get('params')
+        incl = step_params.get('include')
+      # for all stms - end
+        state_transitions = self.states_transitions[StateType.STM_FORINRANGE]
+      else:
+        state_transitions = self.states_transitions[state_type]
       state_name, act_name = step_to_state_def(idx)
       trans_def = copy.deepcopy(state_transitions)
       for n, tr in enumerate(trans_def):

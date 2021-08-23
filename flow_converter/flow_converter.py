@@ -35,24 +35,26 @@ class FlowConverter():
     return 'stm' in {k for m in self.meta for k in m.keys()}
 
   def state_is_statement(self, state_def):
-    stm_name = state_def['name'].split('-')[1]
-    return stm_name == 'forinrange'
+    stm_name = state_def.get('name').split('-')[1]
+    return stm_name == 'forinrangestm' or stm_name == 'whilestm'
     
   def decorate(self, states_def):
     for idx, state_def in enumerate(states_def):
       if self.state_is_statement(state_def):
-        state_name = state_def['name'] 
+        state_name = state_def.get('name') 
         stm_name = state_name.split('-')[1]
-        if stm_name == 'forinrange':
+        if stm_name == 'forinrangestm':
           state_def['exit-action'] = '____frfsm-actions.forinrange_exit'
-          next_state_def = states_def[idx+1]
-          next_state_def['exit-action'] = '____frfsm-actions.forinrange_included'
-          # Change the last state in the stm transition destination
-          step_meta = self.meta[idx]
-          include = step_meta['params']['include']
-          last_state_def_inside_stm = states_def[idx+include]
-          transitions_def = last_state_def_inside_stm['transitions']
-          for tr in transitions_def:
-            if tr['event'] == 'next':
-              tr['target'] = state_name
+        if stm_name == 'whilestm':
+          state_def['exit-action'] = '____frfsm-actions.while_exit'
+        next_state_def = states_def[idx+1]
+        next_state_def['exit-action'] = '____frfsm-actions.stm_included'
+        # Change the last state in the stm transition destination
+        step_meta = self.meta[idx]
+        include = step_meta.get('params').get('include')
+        last_state_def_inside_stm = states_def[idx+include]
+        transitions_def = last_state_def_inside_stm.get('transitions')
+        for tr in transitions_def:
+          if tr['event'] == 'next':
+            tr['target'] = state_name
     return states_def
