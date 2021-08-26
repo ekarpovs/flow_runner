@@ -31,13 +31,32 @@ class Runner():
     io = self.fsm.context.get('output')
     return io
 
+  def get_step_out_image(self):
+    io = self.fsm.context.get('output')
+    step = self.fsm.context.get('step')
+    # an dst_key may be defined by any operation,
+    # delete the key/value after usage
+    params = step.get('params', {})
+    dst_key = params.get('dst-key', 'image')
+    image = io.get(dst_key)
+    if image is not None:
+      out_image = image.copy()
+    else:
+      out_image = io.get('image')
+    return out_image
+
+
   def get_step_id(self):
      return self.fsm.context.get_current_state_id()
 
 
   def start(self):
     # start fsm from first state
-    stack = Stack()
+    stack = self.fsm.context.get('stack', None)
+    if stack is not None:
+      stack.reset()
+    else:
+      stack = Stack()
     self.fsm.context.put('stack', stack)
     self.fsm.start(self.engine.fsm_impl)   
     return
@@ -70,5 +89,19 @@ class Runner():
     event = self.map_event_name(event)
     self.fsm.dispatch(event)
     idx = self.get_step_id()
-    io = self.get_step_io()
-    return idx, io['image']
+    # io = self.get_step_io()
+    out_image = self.get_step_out_image()
+    return idx, out_image
+
+  def run_step(self, event, step_meta):
+    idx, cv2image = self.dispatch_event(event, step_meta)
+    return idx, cv2image
+
+  def run_all(self, flow_meta):
+    n = self.get_number_of_states()
+    idx = 0
+    while (idx < n-1):
+      step_meta = flow_meta[idx]
+      idx, _ = self.run_step('next', step_meta)
+    idx, cv2image = self.run_step('next', step_meta)
+    return idx, cv2image
