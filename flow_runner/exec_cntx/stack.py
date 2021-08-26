@@ -22,7 +22,6 @@ class Stack:
   def pop(self):
     if (self.isEmpty()):
         return str(-maxsize -1) # return minus infinite
-
     return self.stack.pop()
 
 
@@ -30,8 +29,7 @@ class Stack:
   def peek(self):
     if (self.isEmpty()):
         return str(-maxsize -1) # return minus infinite
-
-    return self.stack[len(self.stack)-1]
+    return self.stack[-1]
 
 
   def size(self):
@@ -39,3 +37,4 @@ class Stack:
 
   def reset(self):
     self.stack = []
+    return
