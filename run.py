@@ -4,11 +4,10 @@
 
 import argparse
 import json
-from os import pathsep
 import cv2
 
-from flow_runner import Runner
 from flow_converter import FlowConverter
+from flow_runner import Runner
 
 # Construct the argument parser and parse the arguments
 def parseArgs():
@@ -43,14 +42,6 @@ def readJson(ffn):
 # Read configuration files
 def readConfig():
   return readJson('./cfg/fsm-cfg.json')
-
-def storeFsmDef(fsm_def):
-  out_path = '../data/fsm-def'
-  ffn = "{}/fsm-def.json".format(out_path)
-  json_object = json.dumps(fsm_def, indent = 2) 
-  with open(ffn, "w") as outfile: 
-    outfile.write(json_object)
-  return
 
 def readImage(ffn):
   image = cv2.imread(ffn)
@@ -94,8 +85,6 @@ def main(**kwargs):
   else:
     fc = FlowConverter(flow_meta)
     fsm_def = fc.convert()
-    if kwargs['trace'] == 'yes':
-      storeFsmDef(fsm_def)
 
   # Create the runner
   rn = Runner()

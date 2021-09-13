@@ -14,9 +14,9 @@ def flow_runner_action(oper_impl):
       kwargs = copy.deepcopy(io)
       step = context.get('step')
       if 'params' in step:
-        step = step['params']
-        if 'useorig' in step and step['useorig']:
-          kwargs['image'] = kwargs['orig'].copy()
+        step = step.get('params')
+        if 'useorig' in step and step.get('useorig'):
+          kwargs['image'] = kwargs.get('orig').copy()
       return step, kwargs
 
     def map_after(io):
@@ -80,7 +80,7 @@ def stm_included(context):
       stm_params = last_stm.get('params')
       name = stm_params.get('name')
       value = stm_params.get('value')
-      # prepare input for an included state
+      # prepare input for an included states
       step = context.get('step')
       params = step.get('params')
       # map 'i' 
@@ -96,18 +96,18 @@ def forinrange_exit(context):
   if event == 'next':
     step = context.get('step')
     # "params":{"start": 0, "stop": 60, "step": 15, "i": "angle", "include": 1}
-    params = step['params']
-    start = params['start']
-    stop = params['stop']
-    step = params['step']
-    name = params['i']
-    include = params['include']
+    params = step.get('params')
+    start = params.get('start')
+    stop = params.get('stop')
+    step = params.get('step')
+    name = params.get('map')
+    include = params.get('include')
 
     state_name = context.get_current_state_name()
     if state_stm:
-      # remove from stack previous result (all states above the stm)
-      count = state_stm['params']['count']
-      end = state_stm['params']['end']
+      # remove from stack previous result (all states under the stm)
+      count = state_stm.get('params').get('count')
+      end = state_stm.get('params').get('end')
       if count > 0:
         stack = context.get('stack')
         for i in range(include+1):
@@ -127,8 +127,8 @@ def forinrange_exit(context):
     context.put('last_stm', state_stm)
   elif event == 'prev' or event == 'next_end':
     if state_stm:
-      stack = context.get('stack')
-      stack.pop()
+      # stack = context.get('stack')
+      # stack.pop()
       # remove current context for the stm
       context.put('last_stm', None)
   return context
