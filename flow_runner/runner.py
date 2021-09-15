@@ -64,8 +64,9 @@ class Runner():
       stack.reset()
     # Create init input object
     io = {}
-    io['image'] = cv2image.copy()
-    io['orig'] = cv2image.copy()
+    if cv2image is not None:
+      io['image'] = cv2image.copy()
+      io['orig'] = cv2image.copy()
     # Store it into fsm context object
     self.fsm.context.put('input', io)
 
