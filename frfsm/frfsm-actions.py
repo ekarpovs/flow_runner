@@ -11,7 +11,8 @@ def flow_runner_action(oper_impl):
       else:
         cntx = stack.peek()
         io = cntx.get_io()
-      kwargs = copy.deepcopy(io)
+      # kwargs = copy.deepcopy(io)
+      kwargs = io
       step = context.get('step')
       if 'params' in step:
         step = step.get('params')
@@ -23,11 +24,13 @@ def flow_runner_action(oper_impl):
       if context.get('store-state'):
         stack = context.get('stack')
         cntx = Cntx()
-        cntx.put_io(copy.deepcopy(io))
+        # cntx.put_io(copy.deepcopy(io))
+        cntx.put_io(io)
         stack.push(cntx)
         print("put:", stack.size())
         #  current output
-      io = copy.deepcopy(kwargs)
+      # io = copy.deepcopy(kwargs)
+      io = kwargs
       context.put('output', io)
       return context
 
@@ -36,7 +39,8 @@ def flow_runner_action(oper_impl):
     print("executed: {}.{}".format(__module__, __name__))
     
     step, kwargs = map_before()
-    kwargs = copy.deepcopy(oper_impl(step, **kwargs))   
+    # kwargs = copy.deepcopy(oper_impl(step, **kwargs))   
+    kwargs = oper_impl(step, **kwargs)
     context = map_after(kwargs)
     return context
 
@@ -64,7 +68,8 @@ def _pop(context):
   else:
     cntx = stack.peek()
     io = cntx.get_io()
-  context.put('output', copy.deepcopy(io))
+  # context.put('output', copy.deepcopy(io))
+  context.put('output', io)
   return context
 
 # STM actions
