@@ -11,14 +11,14 @@ def flow_runner_action(oper_impl):
       else:
         cntx = stack.peek()
         io = cntx.get_io()
-      # kwargs = copy.deepcopy(io)
-      kwargs = io
+      data = io
       step = context.get('step')
+      params = {}
       if 'params' in step:
-        step = step.get('params')
-        if 'useorig' in step and step.get('useorig'):
-          kwargs['image'] = kwargs.get('orig').copy()
-      return step, kwargs
+        params = step.get('params')
+        if 'useorig' in params and params.get('useorig'):
+          data['image'] = data.get('orig').copy()
+      return params, data
 
     def map_after(io):
       if context.get('store-state'):
@@ -29,8 +29,7 @@ def flow_runner_action(oper_impl):
         stack.push(cntx)
         print("put:", stack.size())
         #  current output
-      # io = copy.deepcopy(kwargs)
-      io = kwargs
+      io = data
       context.put('output', io)
       return context
 
@@ -38,10 +37,9 @@ def flow_runner_action(oper_impl):
     __module__ = oper_impl.__module__
     print("executed: {}.{}".format(__module__, __name__))
     
-    step, kwargs = map_before()
-    # kwargs = copy.deepcopy(oper_impl(step, **kwargs))   
-    kwargs = oper_impl(step, **kwargs)
-    context = map_after(kwargs)
+    params, data = map_before()
+    data = oper_impl(params, **data)
+    context = map_after(data)
     return context
 
   return execute
