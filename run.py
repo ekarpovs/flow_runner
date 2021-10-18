@@ -56,10 +56,10 @@ def readImage(ffn):
   return image
 
 
-def storeImage(input_ffn, out_path, image, idx):
+def store_image(input_ffn, out_path, image, idx, event):
   ffn = input_ffn.replace('\\', '/')
   fn, ext = ffn.split('/')[-1].split('.')
-  ffn = "{}/result-{}-{}.{}".format(out_path, fn, idx, ext)
+  ffn = f"{out_path}/result-{fn}-{idx}-{event}.{ext}"
   cv2.imwrite(ffn, image)
   return
 
@@ -68,7 +68,7 @@ def run_by_step(runner, flow_meta, events):
   idx = 0
   while(True):
     print('q - quit')
-    prompt = 'waits for an event {}:'.format(events)
+    prompt = f"waits for an event {events}:"
     print(prompt)
     # print('waits for an event(next, prev, current):')
     event = input()
@@ -80,7 +80,7 @@ def run_by_step(runner, flow_meta, events):
     if idx < len(flow_meta):
       step_meta = flow_meta[idx]
     idx, cv2image = runner.run_step(event, step_meta)
-    storeImage(kwargs["input"], kwargs["output"], cv2image, idx)
+    store_image(kwargs.get("input"), kwargs.get("output"), cv2image, idx, event)
   return
 
 
@@ -88,19 +88,26 @@ def run_all(runner, flow_meta):
   runner.run_all(flow_meta)
   return
 
+BEGIN_FLOW_MARKER = {"stm": "glbstm.begin"}
+END_FLOW_MARKER = {"stm": "glbstm.end"}
 
 # Main function - the runner's client
 def main(**kwargs): 
   fsm_conf = readConfig()
-  image = readImage(kwargs["input"])
-  flow_meta = readJson(kwargs['meta'])
-  flow_meta.insert(0, {"stm": "glbstm.begin"})
-  flow_meta.append({"stm": "glbstm.end"})
+  image = readImage(kwargs.get("input"))
+  flow_meta = readJson(kwargs.get("meta"))
+  # decorate the meta by begin end
+  flow_meta.insert(0, BEGIN_FLOW_MARKER)
+  flow_meta.append(END_FLOW_MARKER)
+  # enumerate the meta
   for i, meta in enumerate(flow_meta):
     meta['id'] = i
-  if kwargs['def']:
-    fsm_def = readJson(kwargs['def'])
+  # Get FRFSM defintion
+  if kwargs.get("def"):
+    # directly, from fsm def
+    fsm_def = readJson(kwargs.get("def"))
   else:
+    # by convert the meta
     fc = FlowConverter(flow_meta)
     fsm_def = fc.convert()
     # if kwargs['trace'] == 'yes':
@@ -108,12 +115,12 @@ def main(**kwargs):
   # Create the runner
   rn = Runner()
   # Recreate engine when a flow meta changed
-  rn.init_fsm_engine(fsm_conf, fsm_def)
+  rn.create_frfsm(fsm_conf, fsm_def)
   # Restart when a new image was passed 
   rn.start()
   rn.init_io(image)
 
-  if kwargs["step"] == "no":
+  if kwargs.get("step") == "no":
     run_all(rn, flow_meta)
   else:
     run_by_step(rn, flow_meta, fsm_conf.get('events'))   
