@@ -55,7 +55,7 @@ class Runner():
     return
 
 
-  def init_io(self, cv2image):
+  def init_storage(self, cv2image):
     user_data = {}
     if cv2image is not None:
       user_data['image'] = cv2image.copy()

@@ -118,7 +118,7 @@ def main(**kwargs):
   rn.create_frfsm(fsm_conf, fsm_def)
   # Restart when a new image was passed 
   rn.start()
-  rn.init_io(image)
+  rn.init_storage(image)
 
   if kwargs.get("step") == "no":
     run_all(rn, flow_meta)
