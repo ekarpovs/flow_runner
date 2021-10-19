@@ -1,11 +1,12 @@
-import copy
 
 def flow_runner_action(oper_impl):
+  '''
+    Wrapper for any Flow Runner function (loaded from a module)
+  '''
+  
   def execute(context):
     def map_before():
-      data = {}    
-      io = context.get_user_data('io')
-      data['image'] = io.get('input')
+      data = context.get_user_data('user_data')
       step = context.get_user_data('step')
       params = {}
       if 'params' in step:
@@ -13,9 +14,7 @@ def flow_runner_action(oper_impl):
       return params, data
 
     def map_after(data):
-      io = {}
-      io['output'] = data.get('image')  
-      context.set_user_data('io', io)
+      context.set_user_data('user_data', data)
       return context
 
     __name__ = oper_impl.__name__

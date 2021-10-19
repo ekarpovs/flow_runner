@@ -2,14 +2,12 @@ from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 
 from .exec_cntx import Storage
-from .exec_cntx import StateContext
 
 class Runner():
   def __init__(self):
     self._fsm = FSM('cntx_test')
     self._frfsm: Frfsm = None
     self._storage = None
-
     return
 
 # Properties
@@ -31,21 +29,14 @@ class Runner():
   def step_id(self):
      return self._fsm.current_state_id
 
-  # @property
-  # def step_out_image(self):
-  #   io = self._fsm.context.get('io')
-  #   out_image = io.get('output')
-  #   return out_image
-
-
   @property
-  def step_meta(self, step_meta):
-    self._fsm.context.get_user_data('step')
+  def step_meta(self):
+    self._fsm.get_user_data('step')
     return
 
   @step_meta.setter
   def step_meta(self, step_meta):
-    self._fsm.context.set_user_data('step', step_meta)
+    self._fsm.set_user_data('step', step_meta)
     return
 
 # Methods
@@ -54,28 +45,28 @@ class Runner():
   def create_frfsm(self, fsm_conf, fsm_def):
     self._frfsm = Frfsm(fsm_conf, fsm_def)
     self._storage = Storage()
-    for name in self._frfsm.state_names:
-      self._storage.put_item(name, StateContext())
+    for state_name in self._frfsm.state_names:
+      self._storage.put_state_data(state_name, {'input': None, 'output': None})
     return
 
 
   def start(self):
-    self._fsm.start(self._frfsm)   
+    self._fsm.start(self._frfsm.impl)   
     return
 
 
   def init_io(self, cv2image):
-    io = {}
+    user_data = {}
     if cv2image is not None:
-      io['input'] = cv2image.copy()
-      # Store it into fsm context object
-      self._fsm.context.set_user_data('io', io)
-      #  and into storage
-      state_name = self._fsm.context.current_state_name
-      item = self._storage.get_item(state_name)
-      item.input_ = cv2image.copy()
-      item.output_ = cv2image.copy()
-      self._storage.put_item(state_name, item)
+      user_data['image'] = cv2image.copy()
+      # Store it into the fsm context object
+      self._fsm.set_user_data('user_data', user_data)
+      #  and into the storage
+      state_name = self._fsm.current_state_name
+      state_data = {}
+      state_data['input'] = cv2image.copy()
+      # state_data['output'] = cv2image.copy()
+      self._storage.put_state_data(state_name, state_data)
     return
 
   def map_event_name(self, event):
@@ -86,28 +77,29 @@ class Runner():
     self.step_meta = step_meta
     event = self.map_event_name(event)
     # Prepare input
-    state_name = self._fsm.context.current_state_name
-    item = self._storage.get_item(state_name)
-    # Previous output will be input for the current state
-    in_image = item.output_
-    io = self._fsm.context.get_user_data('io')
-    io['input'] = in_image.copy()
+    state_name = self._fsm.current_state_name
+    state_data = self._storage.get_state_data(state_name)
+    in_image = state_data.get('input')
     # Store it into fsm context object
-    self._fsm.context.set_user_data('io', io)
+    user_data = self._fsm.get_user_data('user_data')
+    user_data['image'] = in_image.copy()
+    self._fsm.set_user_data('user_data', user_data)
 
     # Perform the step
     self._fsm.dispatch(event)
 
-    # Get output
+    # Get the output
     idx = self.step_id
-    io = self._fsm.context.get_user_data('io')
-    out_image = io.get('output')
-    # Update storage
-    state_name = self._fsm.context.current_state_name
-    item = self._storage.get_item(state_name)
+    user_data = self._fsm.get_user_data('user_data')
+    out_image = user_data.get('image')
+
+    # Update new state storage
+    state_name = self._fsm.current_state_name
+    state_data = self._storage.get_state_data(state_name)
     # Current output will be input for next state
-    item.input_ = out_image.copy()
-    self._storage.put_item(state_name, item)
+    # state_data['input'] = out_image.copy()
+    state_data['input'] = out_image.copy()
+    self._storage.put_state_data(state_name, state_data)
     return idx, out_image
 
 
