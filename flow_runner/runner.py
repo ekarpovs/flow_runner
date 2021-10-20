@@ -74,6 +74,16 @@ class Runner():
 
 
   def dispatch_event(self, event, step_meta=None):
+    if event == 'next':
+  	  idx, out_image = self.dispatch_next(step_meta)
+    elif event == 'prev':
+  	  idx, out_image = self.dispatch_prev(step_meta)
+    else:
+  	  idx, out_image = self.dispatch_current(step_meta)
+    return idx, out_image
+
+  def dispatch_next(self, step_meta=None):
+    event = 'next'
     self.step_meta = step_meta
     event = self.map_event_name(event)
     # Prepare input
@@ -101,6 +111,58 @@ class Runner():
     state_data['input'] = out_image.copy()
     self._storage.put_state_data(state_name, state_data)
     return idx, out_image
+
+
+  def dispatch_prev(self, step_meta=None):
+    event = 'prev'
+    source_state_name = self._fsm.current_state_name
+    source_state_data = self._storage.get_state_data(source_state_name)
+
+    self._fsm.dispatch(event)
+
+    # Get the output
+    idx = self.step_id
+    target_state_name = self._fsm.current_state_name
+    if source_state_name != source_state_name:
+      # Prevent to delete initial storage item
+      source_state_data['input'] = None
+      source_state_data['output'] = None
+      self._storage.put_state_data(source_state_name, source_state_data)
+    # Update new state storage
+    target_state_data = self._storage.get_state_data(target_state_name)
+    out_image = target_state_data['input']
+    return idx, out_image
+
+
+  def dispatch_current(self, step_meta=None):
+    event = 'current'
+    self.step_meta = step_meta
+    # Prepare input
+    state_name = self._fsm.current_state_name
+    state_data = self._storage.get_state_data(state_name)
+    in_image = state_data.get('input')
+    # Store it into fsm context object
+    user_data = self._fsm.get_user_data('user_data')
+    user_data['image'] = in_image.copy()
+    self._fsm.set_user_data('user_data', user_data)
+
+    # Perform the step
+    self._fsm.dispatch(event)
+
+    # Get the output
+    idx = self.step_id
+    user_data = self._fsm.get_user_data('user_data')
+    out_image = user_data.get('image')
+
+    # Update new state storage
+    state_name = self._fsm.current_state_name
+    state_data = self._storage.get_state_data(state_name)
+    # Current output will be input for next state
+    # state_data['input'] = out_image.copy()
+    state_data['output'] = out_image.copy()
+    self._storage.put_state_data(state_name, state_data)
+    return idx, out_image
+
 
 
   def run_step(self, event, step_meta):
