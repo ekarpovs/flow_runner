@@ -1,3 +1,4 @@
+from flow_model import FlowItemModel
 
 def flow_runner_action(oper_impl):
   '''
@@ -7,10 +8,8 @@ def flow_runner_action(oper_impl):
   def execute(context):
     def map_before():
       data = context.get_user_data('user_data')
-      step = context.get_user_data('step')
-      params = {}
-      if 'params' in step:
-        params = step.get('params')
+      model_item: FlowItemModel = context.get_user_data('step')
+      params = model_item.params
       return params, data
 
     def map_after(data):
