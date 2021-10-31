@@ -4,16 +4,18 @@
 
 import argparse
 import json
+import os
 import cv2
 
 from flow_converter import FlowConverter
+from flow_model.flowmodel import FlowModel
 from flow_runner import Runner
 
 # Construct the argument parser and parse the arguments
 def parseArgs():
   ap = argparse.ArgumentParser(description="flow runner fsm")
-  ap.add_argument("-m", "--meta", required = True,
-	help = "full path to the meta data file")
+  ap.add_argument("-w", "--ws", required = True,
+	help = "full path to the worksheet file")
   ap.add_argument("-d", "--def", required = False,
 	help = "full path to the fsm definition file")
   ap.add_argument("-i", "--input", required = True,
@@ -88,27 +90,23 @@ def run_all(runner, flow_meta):
   runner.run_all(flow_meta)
   return
 
-BEGIN_FLOW_MARKER = {"stm": "glbstm.begin"}
-END_FLOW_MARKER = {"stm": "glbstm.end"}
-
 # Main function - the runner's client
 def main(**kwargs): 
   fsm_conf = readConfig()
   image = readImage(kwargs.get("input"))
-  flow_meta = readJson(kwargs.get("meta"))
-  # decorate the meta by begin end
-  flow_meta.insert(0, BEGIN_FLOW_MARKER)
-  flow_meta.append(END_FLOW_MARKER)
-  # enumerate the meta
-  for i, meta in enumerate(flow_meta):
-    meta['id'] = i
+  ffn = kwargs.get("ws")
+  ws = readJson(ffn)
   # Get FRFSM defintion
   if kwargs.get("def"):
     # directly, from fsm def
     fsm_def = readJson(kwargs.get("def"))
   else:
     # by convert the meta
-    fc = FlowConverter(flow_meta)
+    pn = os.path.split(ffn)    
+    path = pn[0]
+    name = pn[1]
+    model = FlowModel(path, name, ws)
+    fc = FlowConverter(model)
     fsm_def = fc.convert()
     # if kwargs['trace'] == 'yes':
     #   writeJson('../data/fsm-def/fsm-def-edge.json', fsm_def)
@@ -121,9 +119,9 @@ def main(**kwargs):
   rn.init_storage(image)
 
   if kwargs.get("step") == "no":
-    run_all(rn, flow_meta)
+    run_all(rn, ws)
   else:
-    run_by_step(rn, flow_meta, fsm_conf.get('events'))   
+    run_by_step(rn, ws, fsm_conf.get('events'))   
   return
 
 
