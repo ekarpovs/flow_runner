@@ -3,7 +3,7 @@ from flow_model.flowitemmodel import FlowItemModel
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 
-from .exec_cntx import Storage
+from .storage import Storage
 
 class Runner():
   def __init__(self):
@@ -172,11 +172,11 @@ class Runner():
     return idx, cv2image
 
 
-  def run_all(self, flow_items: List[FlowItemModel]):
+  def run_all(self, model: List[FlowItemModel]):
     n = self.number_of_states
     idx = 0
     while (idx < n-1):
-      step_meta = flow_items[idx]
+      step_meta = model.get_item(idx)
       idx, _ = self.run_step('next', step_meta)
     idx, cv2image = self.run_step('next', step_meta)
     return idx, cv2image

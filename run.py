@@ -66,7 +66,7 @@ def store_image(input_ffn, out_path, image, idx, event):
   return
 
 
-def run_by_step(runner, flow_meta, events):
+def run_by_step(runner, model, events):
   idx = 0
   while(True):
     print('q - quit')
@@ -78,16 +78,14 @@ def run_by_step(runner, flow_meta, events):
       return
     if event not in events:
       continue
-    step_meta = ''
-    if idx < len(flow_meta):
-      step_meta = flow_meta[idx]
+    step_meta = model.get_item(idx)
     idx, cv2image = runner.run_step(event, step_meta)
     store_image(kwargs.get("input"), kwargs.get("output"), cv2image, idx, event)
   return
 
 
-def run_all(runner, flow_meta):
-  runner.run_all(flow_meta)
+def run_all(runner, model):
+  runner.run_all(model)
   return
 
 # Main function - the runner's client
@@ -102,10 +100,10 @@ def main(**kwargs):
     fsm_def = readJson(kwargs.get("def"))
   else:
     # by convert the meta
-    pn = os.path.split(ffn)    
-    path = pn[0]
-    name = pn[1]
-    model = FlowModel(path, name, ws)
+    # pn = os.path.split(ffn)    
+    # path = pn[0]
+    # name = pn[1]
+    model = FlowModel(ws)
     fc = FlowConverter(model)
     fsm_def = fc.convert()
     # if kwargs['trace'] == 'yes':
@@ -119,9 +117,9 @@ def main(**kwargs):
   rn.init_storage(image)
 
   if kwargs.get("step") == "no":
-    run_all(rn, ws)
+    run_all(rn, model)
   else:
-    run_by_step(rn, ws, fsm_conf.get('events'))   
+    run_by_step(rn, model, fsm_conf.get('events'))   
   return
 
 
