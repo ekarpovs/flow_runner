@@ -1,5 +1,6 @@
 from typing import List
 from flow_model.flowitemmodel import FlowItemModel
+from flow_model.flowmodel import FlowModel
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 
@@ -75,7 +76,7 @@ class Runner():
     return event
 
 
-  def dispatch_event(self, event, flow_item=None):
+  def dispatch_event(self, event, flow_item:FlowItemModel):
     if event == 'next':
   	  idx, out_image = self.dispatch_next(flow_item)
     elif event == 'prev':
@@ -84,7 +85,7 @@ class Runner():
   	  idx, out_image = self.dispatch_current(flow_item)
     return idx, out_image
 
-  def dispatch_next(self, flow_item=None):
+  def dispatch_next(self, flow_item: FlowItemModel):
     event = 'next'
     self.step_meta = flow_item
     event = self.map_event_name(event)
@@ -115,7 +116,7 @@ class Runner():
     return idx, out_image
 
 
-  def dispatch_prev(self, step_meta=None):
+  def dispatch_prev(self, flow_item: FlowItemModel):
     event = 'prev'
     source_state_name = self._fsm.current_state_name
     source_state_data = self._storage.get_state_data(source_state_name)
@@ -136,9 +137,9 @@ class Runner():
     return idx, out_image
 
 
-  def dispatch_current(self, step_meta=None):
+  def dispatch_current(self, flow_item: FlowItemModel):
     event = 'current'
-    self.step_meta = step_meta
+    self.step_meta = flow_item
     # Prepare input
     state_name = self._fsm.current_state_name
     state_data = self._storage.get_state_data(state_name)
@@ -167,12 +168,12 @@ class Runner():
 
 
 
-  def run_step(self, event, flow_item):
+  def run_step(self, event, flow_item: FlowItemModel):
     idx, cv2image = self.dispatch_event(event, flow_item)
     return idx, cv2image
 
 
-  def run_all(self, model: List[FlowItemModel]):
+  def run_all(self, model: List[FlowModel]):
     n = self.number_of_states
     idx = 0
     while (idx < n-1):
