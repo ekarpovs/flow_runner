@@ -1,4 +1,9 @@
-from flow_model import FlowItemModel
+from typing import List
+
+from flow_storage import FlowStorage
+from flow_storage import FlowStateStorage
+from flow_storage import FlowDataRef
+from flow_storage import FlowStateIOData
 
 def flow_runner_action(oper_impl):
   '''
@@ -6,23 +11,16 @@ def flow_runner_action(oper_impl):
   '''
   
   def execute(context):
-    def map_before():
-      data = context.get_user_data('user_data')
-      model_item: FlowItemModel = context.get_user_data('step')
-      params = model_item.params
-      return params, data
-
-    def map_after(data):
-      context.set_user_data('user_data', data)
-      return context
-
     __name__ = oper_impl.__name__
     __module__ = oper_impl.__module__
     print(f"executed: {__module__}.{__name__}")
     
-    params, data = map_before()
+    params = context.get_user_data('params')   
+    data = context.get_user_data('data')   
+
     data = oper_impl(params, **data)
-    context = map_after(data)
-    
+
+    context.set_user_data('params', {})   
+    context.set_user_data('data', data)   
     return context
   return execute

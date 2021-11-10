@@ -11,5 +11,6 @@
       "next",
       "prev",
       "current"
-    ]
+    ],
+    "storage-path": "../data/storage"
   }
