@@ -30,6 +30,11 @@ class Runner():
   def state_idx(self) -> int:
      return self._fsm.current_state_id
 
+  @property
+  def state_id(self) -> int:
+     return self._fsm.current_state_name
+
+
 # Methods
   # the runner's life cycle
   # create fsm context  
@@ -43,8 +48,8 @@ class Runner():
 
   def run_all(self, model: FlowModel) -> None:
     n = self._frfsm.number_of_states
-    idx = 0
-    while (idx <= n-1):
+    idx = self.state_idx
+    while (idx <= n-2):
       flow_item = model.get_item(idx)
       idx = idx+1
       self.run_step('next', flow_item)
