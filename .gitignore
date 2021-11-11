@@ -1,4 +1,5 @@
 .vscode
+doc
 flow_runner/__pycache__
 flow_runner/storage/__pycache__
 frfsm/__pycache__
