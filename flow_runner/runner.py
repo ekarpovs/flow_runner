@@ -75,7 +75,7 @@ class Runner():
     event = 'next'
     event = self._map_event_name(event)
     self._fsm.set_user_data("params", flow_item.params)
-    state_id = self._fsm.current_state_name
+    state_id = self.state_id
     data = self.storage.get_state_input_data(state_id)
     self._fsm.set_user_data("data", data)
 
@@ -83,26 +83,26 @@ class Runner():
     self._fsm.dispatch(event)
 
     # Strore output data of the previous state
+    if state_id == self.state_id:
+      # not changed
+      return
     data = self._fsm.get_user_data("data")
     self.storage.set_state_output_data(state_id, data)
     out_refs = self.storage.get_state_output_refs(state_id)
     # Update external input references of the current state 
-    state_id = self._fsm.current_state_name
-    self.storage.set_state_input_refs(state_id, out_refs)
+    self.storage.set_state_input_refs(self.state_id, out_refs)
     return
 
   def _dispatch_prev(self, flow_item: FlowItemModel):
     event = 'prev'
-    state_id = self._fsm.current_state_name
-    self.storage.clean_state_output_data(state_id)
+    self.storage.clean_state_output_data(self.state_id)
     self._fsm.dispatch(event)
     return
 
   def _dispatch_current(self, flow_item: FlowItemModel):
     event = 'current'
     self._fsm.set_user_data("params", flow_item.params)
-    state_id = self._fsm.current_state_name
-    data = self.storage.get_state_input_data(state_id)
+    data = self.storage.get_state_input_data(self.state_id)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
@@ -110,5 +110,5 @@ class Runner():
 
     # Strore output data of the state
     data = self._fsm.get_user_data("data")
-    self.storage.set_state_output_data(state_id, data)
+    self.storage.set_state_output_data(self.state_id, data)
     return
