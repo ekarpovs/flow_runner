@@ -9,6 +9,7 @@ class Runner():
     self._storage: FlowStorage = None
     self._fsm = FSM('cntx_test')
     self._frfsm: Frfsm = None
+    self._output_from_state = None
     return
 
 # Properties
@@ -34,6 +35,15 @@ class Runner():
   def state_id(self) -> int:
      return self._fsm.current_state_name
 
+  @property
+  def output_from_state(self) -> str:
+    return self._output_from_state
+
+  @output_from_state.setter
+  def output_from_state(self, value: str) -> None:
+    self._output_from_state = value
+    return
+
 
 # Methods
   # the runner's life cycle
@@ -44,6 +54,7 @@ class Runner():
 
   def start(self) -> None:
     self._fsm.start(self._frfsm.impl)   
+    self.output_from_state = self._fsm.current_state_name
     return
 
   def run_all(self, model: FlowModel) -> None:
@@ -72,20 +83,19 @@ class Runner():
     return
 
   def _dispatch_next(self, flow_item: FlowItemModel) -> None:
+    if self.state_idx == self._frfsm.number_of_states-1:
+      return
     event = 'next'
     event = self._map_event_name(event)
     self._fsm.set_user_data("params", flow_item.params)
     state_id = self.state_id
+    self.output_from_state = state_id
     data = self.storage.get_state_input_data(state_id)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
     self._fsm.dispatch(event)
 
-    # Strore output data of the previous state
-    if state_id == self.state_id:
-      # not changed
-      return
     data = self._fsm.get_user_data("data")
     self.storage.set_state_output_data(state_id, data)
     out_refs = self.storage.get_state_output_refs(state_id)
@@ -97,6 +107,7 @@ class Runner():
     event = 'prev'
     self.storage.clean_state_output_data(self.state_id)
     self._fsm.dispatch(event)
+    self.output_from_state = self.state_id
     return
 
   def _dispatch_current(self, flow_item: FlowItemModel):
@@ -111,4 +122,5 @@ class Runner():
     # Strore output data of the state
     data = self._fsm.get_user_data("data")
     self.storage.set_state_output_data(self.state_id, data)
+    self.output_from_state = self.state_id
     return
