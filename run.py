@@ -61,7 +61,7 @@ def run_by_step(runner: Runner, model, events):
       return
     if event not in events:
       continue
-    idx = runner.state_id
+    idx = runner.state_idx
     step_meta = model.get_item(idx)
     runner.run_step(event, step_meta)
   return
@@ -77,12 +77,7 @@ def main(**kwargs):
   set_runtime_environment(fsm_conf)
   ffn = kwargs.get("ws")
   ws = readJson(ffn)
-
-  # Create Flow Storage
-  path = fsm_conf.get('storage-path', '.')
-  config = FlowStorageConfig(path)
-  storage = FlowStorage(config, ws)
-  
+ 
   # Get FRFSM defintion
   if kwargs.get("def"):
     # directly, from fsm def
@@ -94,6 +89,12 @@ def main(**kwargs):
     fsm_def = fc.convert()
     # if kwargs['trace'] == 'yes':
     #   writeJson('../data/fsm-def/fsm-def-test.json', fsm_def)
+
+  # Create Flow Storage
+  path = fsm_conf.get('storage-path', '.')
+  config = FlowStorageConfig(path)
+  storage = FlowStorage(config, model.get_as_ws())
+
   # Create the runner
   rn = Runner()
   # Recreate context, when a flow meta changed
