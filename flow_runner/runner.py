@@ -90,7 +90,7 @@ class Runner():
     self._fsm.set_user_data("params", flow_item.params)
     state_id = self.state_id
     self.output_from_state = state_id
-    data = self.storage.get_state_input_data(state_id)
+    data = self.storage.get_state_input_data(state_id, flow_item.aliases)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
@@ -113,7 +113,7 @@ class Runner():
   def _dispatch_current(self, flow_item: FlowItemModel):
     event = 'current'
     self._fsm.set_user_data("params", flow_item.params)
-    data = self.storage.get_state_input_data(self.state_id)
+    data = self.storage.get_state_input_data(self.state_id, flow_item.aliases)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
