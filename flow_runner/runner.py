@@ -73,14 +73,13 @@ class Runner():
   def _map_event_name(self, event: str) -> str:
     return event
 
-  def _dispatch_event(self, event, flow_item:FlowItemModel):
+  def _dispatch_event(self, event, flow_item:FlowItemModel) -> None:
     if event == 'next':
-  	  self._dispatch_next(flow_item)
-    elif event == 'prev':
-  	  self._dispatch_prev(flow_item)
-    else:
-  	  self._dispatch_current(flow_item)
-    return
+      return self._dispatch_next(flow_item)
+    if event == 'prev':
+      return self._dispatch_prev(flow_item)
+    return self._dispatch_current(flow_item)
+    
 
   def _dispatch_next(self, flow_item: FlowItemModel) -> None:
     if self.state_idx == self._frfsm.number_of_states-1:
