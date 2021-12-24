@@ -70,22 +70,24 @@ class Runner():
     self._dispatch_event(event, flow_item)
     return
 
-  def _map_event_name(self, event: str) -> str:
-    return event
-
   def _dispatch_event(self, event, flow_item:FlowItemModel) -> None:
     if event == 'next':
-      return self._dispatch_next(flow_item)
+      if flow_item.name == 'glbstm.if_begin':
+        self._dispatch_current(flow_item)
+        data = self._fsm.get_user_data("data")
+        if not data.get('if-result'):     
+          event = 'next_false'
+      return self._dispatch_next(flow_item, event)
     if event == 'prev':
-      return self._dispatch_prev(flow_item)
+      if flow_item.name == 'glbstm.if_end':
+        event = 'prev_begin'
+      return self._dispatch_prev(flow_item, event)
     return self._dispatch_current(flow_item)
     
 
-  def _dispatch_next(self, flow_item: FlowItemModel) -> None:
+  def _dispatch_next(self, flow_item: FlowItemModel, event = 'next') -> None:
     if self.state_idx == self._frfsm.number_of_states-1:
       return
-    event = 'next'
-    event = self._map_event_name(event)
     self._fsm.set_user_data("params", flow_item.params)
     state_id = self.state_id
     self.output_from_state = state_id
@@ -102,8 +104,7 @@ class Runner():
     self.storage.set_state_input_refs(self.state_id, out_refs)
     return
 
-  def _dispatch_prev(self, flow_item: FlowItemModel):
-    event = 'prev'
+  def _dispatch_prev(self, flow_item: FlowItemModel, event = 'prev'):
     self.storage.clean_state_output_data(self.state_id)
     self._fsm.dispatch(event)
     self.output_from_state = self.state_id
