@@ -84,9 +84,16 @@ class Runner():
           event = 'next_end'
       if flow_item.name == 'glbstm.while_end':
         event = 'next_begin'
+      if flow_item.name == 'glbstm.for_begin':
+        self._dispatch_current(flow_item)
+        data = self._fsm.get_user_data("data")
+        if not data.get('for-result'):     
+          event = 'next_end'
+      if flow_item.name == 'glbstm.for_end':
+        event = 'next_begin'
       return self._dispatch_next(flow_item, event)
     if event == 'prev':
-      if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end':
+      if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
         event = 'prev_begin'
       return self._dispatch_prev(flow_item, event)
     return self._dispatch_current(flow_item)
