@@ -76,25 +76,25 @@ class Runner():
         self._dispatch_current(flow_item)
         data = self._fsm.get_user_data("data")
         if not data.get('if-result'):     
-          event = 'next_end'
+          event = 'end_stm'
       if flow_item.name == 'glbstm.while_begin':
         self._dispatch_current(flow_item)
         data = self._fsm.get_user_data("data")
         if not data.get('while-result'):     
-          event = 'next_end'
+          event = 'end_stm'
       if flow_item.name == 'glbstm.while_end':
-        event = 'next_begin'
+        event = 'begin_stm'
       if flow_item.name == 'glbstm.for_begin':
         self._dispatch_current(flow_item)
         data = self._fsm.get_user_data("data")
         if not data.get('for-result'):     
-          event = 'next_end'
+          event = 'end_stm'
       if flow_item.name == 'glbstm.for_end':
-        event = 'next_begin'
+        event = 'begin_stm'
       return self._dispatch_next(flow_item, event)
     if event == 'prev':
       if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
-        event = 'prev_begin'
+        event = 'begin_stm'
       return self._dispatch_prev(flow_item, event)
     return self._dispatch_current(flow_item)
     
@@ -103,19 +103,23 @@ class Runner():
     if self.state_idx == self._frfsm.number_of_states-1:
       return
     self._fsm.set_user_data("params", flow_item.params)
-    state_id = self.state_id
-    self.output_from_state = state_id
-    data = self.storage.get_state_input_data(state_id, flow_item.aliases)
+    data = self.storage.get_state_input_data(self.state_id, flow_item.links)
     self._fsm.set_user_data("data", data)
-
+    
+    # Remember current state for forward usage
+    state_id = self.state_id
     # Perform the step
     self._fsm.dispatch(event)
 
     data = self._fsm.get_user_data("data")
     self.storage.set_state_output_data(state_id, data)
-    out_refs = self.storage.get_state_output_refs(state_id)
-    # Update external input references of the current state 
-    self.storage.set_state_input_refs(self.state_id, out_refs)
+    self.output_from_state = state_id
+    
+    # if event != 'next_begin':
+    #   # Default stream
+    #   out_refs = self.storage.get_state_output_refs(state_id)
+    #   # Update external input references of the current state 
+    #   self.storage.set_state_input_refs(self.state_id, out_refs)
     return
 
   def _dispatch_prev(self, flow_item: FlowItemModel, event = 'prev'):
@@ -127,7 +131,7 @@ class Runner():
   def _dispatch_current(self, flow_item: FlowItemModel):
     event = 'current'
     self._fsm.set_user_data("params", flow_item.params)
-    data = self.storage.get_state_input_data(self.state_id, flow_item.aliases)
+    data = self.storage.get_state_input_data(self.state_id, flow_item.links)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
