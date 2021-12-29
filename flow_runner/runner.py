@@ -115,11 +115,11 @@ class Runner():
     self.storage.set_state_output_data(state_id, data)
     self.output_from_state = state_id
     
-    # if event != 'next_begin':
-    #   # Default stream
-    #   out_refs = self.storage.get_state_output_refs(state_id)
-    #   # Update external input references of the current state 
-    #   self.storage.set_state_input_refs(self.state_id, out_refs)
+    if event != 'begin_stm':
+      # Default data stream for sequential flow
+      out_refs = self.storage.get_state_output_refs(state_id)
+      # Update external input references of the new state 
+      self.storage.set_state_input_refs(self.state_id, out_refs)
     return
 
   def _dispatch_prev(self, flow_item: FlowItemModel, event = 'prev'):
