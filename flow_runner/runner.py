@@ -103,7 +103,7 @@ class Runner():
     if self.state_idx == self._frfsm.number_of_states-1:
       return
     self._fsm.set_user_data("params", flow_item.params)
-    data = self.storage.get_state_input_data(self.state_id, flow_item.links)
+    data = self.storage.get_state_input_data(self.state_id)
     self._fsm.set_user_data("data", data)
     
     # Remember current state for forward usage
@@ -114,12 +114,6 @@ class Runner():
     data = self._fsm.get_user_data("data")
     self.storage.set_state_output_data(state_id, data)
     self.output_from_state = state_id
-    
-    if event != 'begin_stm':
-      # Default data stream for sequential flow
-      out_refs = self.storage.get_state_output_refs(state_id)
-      # Update external input references of the new state 
-      self.storage.set_state_input_refs(self.state_id, out_refs)
     return
 
   def _dispatch_prev(self, flow_item: FlowItemModel, event = 'prev'):
@@ -131,7 +125,7 @@ class Runner():
   def _dispatch_current(self, flow_item: FlowItemModel):
     event = 'current'
     self._fsm.set_user_data("params", flow_item.params)
-    data = self.storage.get_state_input_data(self.state_id, flow_item.links)
+    data = self.storage.get_state_input_data(self.state_id)
     self._fsm.set_user_data("data", data)
 
     # Perform the step
