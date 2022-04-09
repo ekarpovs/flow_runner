@@ -1,4 +1,8 @@
 python > 3.7.4
 cv2 >= 3.4.2
+#local installation
+operation_loader >= 0.1
 gfsm >= 0.1
+flow_model >= 0.1
 flow_converter >= 0.1
+flow_storage >= 0.1
