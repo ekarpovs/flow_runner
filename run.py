@@ -1,5 +1,5 @@
 # Usage:
-#   python run.py -w <worsheet full path> -s <path to storage directory> [-d <fsm def full path>] [-o 'no'] [-t 'no']
+#   python run.py -w <worsheet full path> [-d <fsm def full path>] [-o 'no'] [-s 'no'] [-t 'no'] 
 # 
 
 import argparse
@@ -91,8 +91,8 @@ def main(**kwargs):
     #   writeJson('../data/fsm-def/fsm-def-test.json', fsm_def)
 
   # Create Flow Storage
-  path = fsm_conf.get('storage-path', '.')
-  config = FlowStorageConfig(path)
+  storage_cfg = fsm_conf.get('storage', '.')
+  config = FlowStorageConfig(storage_cfg)
   storage = FlowStorage(config, model.get_as_ws())
 
   # Create the runner
