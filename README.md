@@ -24,7 +24,7 @@ _____
 
 ```bash
 cd flow_runner
-pip install -e .
+pip install -e . --use-feature=in-tree-build
 ```
 
 ## Usage
