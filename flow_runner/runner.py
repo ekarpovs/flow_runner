@@ -1,4 +1,5 @@
 from typing import Dict, List
+
 from flow_storage import FlowStorage
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
@@ -76,7 +77,6 @@ class Runner():
         data = self.storage.get_state_input_data(self.state_id)
         execution_context = data.get('executioncontext')
         if execution_context is not None:
-          execution_context = json.loads(execution_context)
           result = execution_context.get('result')
           if not result:
             execution_context['current'] = -1
