@@ -11,7 +11,7 @@ class Frfsm():
 
   @property
   def state_names(self):
-    return self._fsm_impl.get('states').keys()
+    return list(self._fsm_impl.get('states').keys())
 
   @property
   def number_of_states(self):

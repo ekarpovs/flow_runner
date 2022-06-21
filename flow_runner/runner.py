@@ -60,10 +60,9 @@ class Runner():
 
   def run_all(self, model: FlowModel) -> None:
     n = self._frfsm.number_of_states
-    idx = self.state_idx
-    while (idx <= n-2):
-      flow_item = model.get_item(idx)
-      idx = idx+1
+    last_sate_id = self._frfsm.state_names[n-1]
+    while (self.state_id != last_sate_id):
+      flow_item = model.get_item(self.state_idx)
       self.run_step('next', flow_item)
     return
 
