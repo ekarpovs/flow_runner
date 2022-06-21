@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, Tuple
 
 from flow_storage import FlowStorage
 from gfsm.fsm import FSM
@@ -73,31 +73,6 @@ class Runner():
 
   def _dispatch_event(self, event, flow_item:FlowItemModel) -> None:
     if event == 'next':
-      if flow_item.name == 'glbstm.for_begin':
-        data = self.storage.get_state_input_data(self.state_id)
-        execution_context = data.get('executioncontext')
-        if execution_context is not None:
-          result = execution_context.get('result')
-          if not result:
-            execution_context['current'] = -1
-            execution_context['result'] = True
-            data['executioncontext'] = execution_context
-            event = 'end_stm'
-            self._fsm.set_user_data("data", data)
-
-            state_id = self.state_id
-            self._fsm.dispatch(event)
-            self.storage.set_state_output_data(state_id, data)
-            self.output_from_state = state_id
-            return
-        else:
-          # Assing pseudo link - link from the state's output to the state's input
-          parts = self.state_id.split('-')
-          idx = parts[0]
-          exec = parts[1]
-          refs = self.storage.get_state_input_refs(self.state_id)
-          for ref in refs:
-              ref.ext_ref = f'{idx}-glbstm.{exec}-executioncontext'
       if flow_item.name == 'glbstm.for_end':
         event = 'begin_stm'
       return self._dispatch_next(flow_item, event)
@@ -106,21 +81,53 @@ class Runner():
         event = 'begin_stm'
       return self._dispatch_prev(flow_item, event)
     return self._dispatch_current(flow_item)
-    
+  
+  @staticmethod
+  def _init_stm_context() -> Dict:
+    execution_context = {}
+    execution_context['init'] = True
+    execution_context['result'] = True
+    return execution_context
+
+  def _restore_stm_context(self, state_id: str, data: Dict) -> Tuple[str, Dict]:
+    event = 'next'
+    cache = self.storage.get_state_cache_data(state_id)
+    execution_context = cache.get('stmselfcache')
+    if execution_context is None:
+      execution_context = self._init_stm_context()
+    else:
+      result = execution_context.get('result')
+      if not result:
+        execution_context = self._init_stm_context()
+        event = 'end_stm'
+    data['executioncontext'] = execution_context
+    return event, data
+
+  def _store_stm_context(self, state_id: str, data: Dict) -> Dict:
+    execution_context = data.get('executioncontext')
+    cache = {}
+    cache['stmselfcache'] = execution_context
+    self.storage.set_state_cache_data(state_id, cache)
+    del data['executioncontext']
+    return data
 
   def _dispatch_next(self, flow_item: FlowItemModel, event = 'next') -> None:
     if self.state_idx == self._frfsm.number_of_states-1:
       return
     self._fsm.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
+    if flow_item.name == 'glbstm.for_begin':
+      event, data = self._restore_stm_context(self.state_id, data)
     self._fsm.set_user_data("data", data)
     
-    # Remember current state for forward usage
+    # Remember current state for future usage
     state_id = self.state_id
     # Perform the step
     self._fsm.dispatch(event)
 
     data = self._fsm.get_user_data("data")
+    if flow_item.name == 'glbstm.for_begin':
+      data = self._store_stm_context(state_id, data)
     self.storage.set_state_output_data(state_id, data)
     self.output_from_state = state_id
     return
