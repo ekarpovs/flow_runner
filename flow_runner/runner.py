@@ -72,7 +72,7 @@ class Runner():
 
   def _dispatch_event(self, event, flow_item:FlowItemModel) -> None:
     if event == 'next':
-      if flow_item.name == 'glbstm.for_end':
+      if flow_item.name == 'glbstm.for_end' or flow_item.name == 'glbstm.while_end':
         event = 'begin_stm'
       return self._dispatch_next(flow_item, event)
     if event == 'prev':
@@ -115,7 +115,7 @@ class Runner():
       return
     self._fsm.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
-    if flow_item.name == 'glbstm.for_begin':
+    if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
       event, data = self._restore_stm_context(self.state_id, data)
     self._fsm.set_user_data("data", data)
     
@@ -125,7 +125,7 @@ class Runner():
     self._fsm.dispatch(event)
 
     data = self._fsm.get_user_data("data")
-    if flow_item.name == 'glbstm.for_begin':
+    if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
       data = self._store_stm_context(state_id, data)
     self.storage.set_state_output_data(state_id, data)
     self.output_from_state = state_id
