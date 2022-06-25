@@ -4,11 +4,13 @@ from flow_storage import FlowStorage
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 from flow_model import FlowModel, FlowItemModel
+from flow_converter import FlowConverter
 
 class Runner():
   def __init__(self):
-    self._storage: FlowStorage = None
     self._fsm = FSM('cntx_test')
+    self._storage: FlowStorage = None
+    self._model: FlowModel = None
     self._frfsm: Frfsm = None
     self._output_from_state = None
     return
@@ -18,10 +20,6 @@ class Runner():
   def storage(self) -> FlowStorage:
     return self._storage
   
-  @storage.setter
-  def storage(self, storage: FlowStorage) -> None:
-    self._storage = storage
-
   @property
   def initialized(self) -> bool:
     return self._frfsm is not None
@@ -48,38 +46,46 @@ class Runner():
 
 # Methods
   # the runner's life cycle
+  def build(self, cfg, model: FlowModel) -> None:
+    if self.storage is not None:
+      self.storage.close()
+    self._model = model
+    self._storage = FlowStorage(cfg.cfg_storage, model.get_as_ws())
+    flow_converter = FlowConverter(model)
+    fsm_def = flow_converter.convert()
+    self._create_frfsm(cfg.cfg_fsm, fsm_def)
+    return
+
+  def reset(self) -> None:
+    self._storage.reset()
+    self._start()
+    return
+
   # create fsm context  
-  def create_frfsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
+  def _create_frfsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
     self._frfsm = Frfsm(fsm_conf, fsm_def)
     return
 
-  def start(self) -> None:
+  def _start(self) -> None:
     self._fsm.start(self._frfsm.impl)   
     self.output_from_state = self._fsm.current_state_name
     return
 
-  def run_all(self, model: FlowModel) -> None:
+# execute requests
+  def run_all(self) -> None:
     n = self._frfsm.number_of_states
     last_sate_id = self._frfsm.state_names[n-1]
     while (self.state_id != last_sate_id):
-      flow_item = model.get_item(self.state_idx)
-      self.run_step('next', flow_item)
+      self.run_step('next', self.state_idx)
     return
 
-  def run_step(self, event, flow_item: FlowItemModel):
-    self._dispatch_event(event, flow_item)
-    return
-
-  def _dispatch_event(self, event, flow_item:FlowItemModel) -> None:
+  def run_step(self, event, idx: int):
+    flow_item = self._model.get_item(idx)
     if event == 'next':
-      if flow_item.name == 'glbstm.for_end' or flow_item.name == 'glbstm.while_end':
-        event = 'begin_stm'
-      return self._dispatch_next(flow_item, event)
+      return self._next(flow_item)
     if event == 'prev':
-      if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
-        event = 'begin_stm'
-      return self._dispatch_prev(flow_item, event)
-    return self._dispatch_current(flow_item)
+      return self._prev(flow_item)
+    return self._current(flow_item)
   
   @staticmethod
   def _init_stm_context() -> Dict:
@@ -110,13 +116,18 @@ class Runner():
     del data['executioncontext']
     return data
 
-  def _dispatch_next(self, flow_item: FlowItemModel, event = 'next') -> None:
+  def _next(self, flow_item: FlowItemModel) -> None:
+
     if self.state_idx == self._frfsm.number_of_states-1:
       return
     self._fsm.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
+    event = 'next'
     if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
       event, data = self._restore_stm_context(self.state_id, data)
+    if flow_item.name == 'glbstm.for_end' or flow_item.name == 'glbstm.while_end':
+      event = 'begin_stm'
+
     self._fsm.set_user_data("data", data)
     
     # Remember current state for future usage
@@ -131,13 +142,16 @@ class Runner():
     self.output_from_state = state_id
     return
 
-  def _dispatch_prev(self, flow_item: FlowItemModel, event = 'prev'):
+  def _prev(self, flow_item: FlowItemModel):
     self.storage.clean_state_output_data(self.state_id)
+    event = 'prev'
+    if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
+      event = 'begin_stm'
     self._fsm.dispatch(event)
     self.output_from_state = self.state_id
     return
 
-  def _dispatch_current(self, flow_item: FlowItemModel):
+  def _current(self, flow_item: FlowItemModel):
     event = 'current'
     self._fsm.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
