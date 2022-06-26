@@ -51,7 +51,7 @@ def set_runtime_environment(cfg):
   for path in actions_paths:
     sys.path.append(path)
 
-def run_by_step(runner: Runner, model, events):
+def run_by_step(runner: Runner, events):
   while(True):
     print('q - quit')
     prompt = f"waits for an event {events}:"
@@ -62,13 +62,11 @@ def run_by_step(runner: Runner, model, events):
     if event not in events:
       continue
     idx = runner.state_idx
-    step_meta = model.get_item(idx)
-    runner.run_step(event, step_meta)
+    runner.run_step(event, idx)
   return
 
-
-def run_all(runner, model):
-  runner.run_all(model)
+def run_all(runner):
+  runner.run_all()
   return
 
 # Main function - the runner's client example
@@ -85,28 +83,30 @@ def main(**kwargs):
   else:
     # by convert the ws
     model = FlowModel(ws)
-    fc = FlowConverter(model)
-    fsm_def = fc.convert()
+    # fc = FlowConverter(model)
+    # fsm_def = fc.convert()
     # if kwargs['trace'] == 'yes':
     #   writeJson('../data/fsm-def/fsm-def-test.json', fsm_def)
 
-  # Create Flow Storage
-  storage_cfg = fsm_conf.get('storage', '.')
-  config = FlowStorageConfig(storage_cfg)
-  storage = FlowStorage(config, model.get_as_ws())
+  # # Create Flow Storage
+  # storage_cfg = fsm_conf.get('storage', '.')
+  # config = FlowStorageConfig(storage_cfg)
+  # storage = FlowStorage(config, model.get_as_ws())
 
   # Create the runner
   rn = Runner()
+  rn.build(fsm_conf, model)
+  rn.reset()
   # Recreate context, when a flow meta changed
-  rn.storage = storage
-  rn.create_frfsm(fsm_conf, fsm_def)
-  rn.start()
+  # rn.storage = storage
+  # rn.create_frfsm(fsm_conf, fsm_def)
+  # rn.start()
   # rn.init_storage(image)
 
   if kwargs.get("step") == "no":
-    run_all(rn, model)
+    run_all(rn)
   else:
-    run_by_step(rn, model, fsm_conf.get('events'))   
+    run_by_step(rn, fsm_conf.get('events'))   
   return
 
 # Entry point

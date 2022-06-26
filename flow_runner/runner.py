@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 
-from flow_storage import FlowStorage
+from flow_storage import FlowStorage, FlowStorageConfig
 from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 from flow_model import FlowModel, FlowItemModel
@@ -46,14 +46,15 @@ class Runner():
 
 # Methods
   # the runner's life cycle
-  def build(self, cfg, model: FlowModel) -> None:
+  def build(self, cfg_fsm: Dict, model: FlowModel) -> None:
     if self.storage is not None:
       self.storage.close()
     self._model = model
-    self._storage = FlowStorage(cfg.cfg_storage, model.get_as_ws())
+    cfg = FlowStorageConfig(cfg_fsm.get('storage'))
+    self._storage = FlowStorage(cfg, model.get_as_ws())
     flow_converter = FlowConverter(model)
     fsm_def = flow_converter.convert()
-    self._create_frfsm(cfg.cfg_fsm, fsm_def)
+    self._create_frfsm(cfg_fsm, fsm_def)
     return
 
   def reset(self) -> None:
@@ -117,7 +118,6 @@ class Runner():
     return data
 
   def _next(self, flow_item: FlowItemModel) -> None:
-
     if self.state_idx == self._frfsm.number_of_states-1:
       return
     self._fsm.set_user_data("params", flow_item.params)
@@ -128,10 +128,9 @@ class Runner():
     if flow_item.name == 'glbstm.for_end' or flow_item.name == 'glbstm.while_end':
       event = 'begin_stm'
 
-    self._fsm.set_user_data("data", data)
-    
     # Remember current state for future usage
     state_id = self.state_id
+    self._fsm.set_user_data("data", data)   
     # Perform the step
     self._fsm.dispatch(event)
 
