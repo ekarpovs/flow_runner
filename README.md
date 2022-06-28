@@ -30,5 +30,5 @@ pip install -e . --use-feature=in-tree-build
 ## Usage
 
 ```bash
-python run.py -f <worksheet name> -i <input file name>
+python run.py -w <worsheet full path> [-d <fsm def full path>] [-o 'no'] [-s 'no'] [-t 'no']
 ```
