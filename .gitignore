@@ -1,5 +1,6 @@
 .vscode
 doc
+build
 cfg/*
 flow_runner/__pycache__
 flow_runner/storage/__pycache__
