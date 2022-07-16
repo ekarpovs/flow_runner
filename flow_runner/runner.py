@@ -5,13 +5,13 @@ from gfsm.fsm import FSM
 from frfsm.frfsm import Frfsm
 from flow_model import FlowModel, FlowItemModel
 from flow_converter import FlowConverter
+from gfsm.fsm_builder.fsm_builder import FsmBuilder
 
 class Runner():
   def __init__(self):
-    self._fsm = FSM('cntx_test')
     self._storage: FlowStorage = None
     self._model: FlowModel = None
-    self._frfsm: Frfsm = None
+    self._fsm_impl = None
     self._output_from_state = None
     return
 
@@ -22,17 +22,17 @@ class Runner():
   
   @property
   def initialized(self) -> bool:
-    return self._frfsm is not None
+    return self._fsm_impl is not None
 
   # runtime
   #  
   @property
   def state_idx(self) -> int:
-     return self._fsm.current_state_id
+     return self._fsm_impl.current_state_id
 
   @property
   def state_id(self) -> int:
-     return self._fsm.current_state_name
+     return self._fsm_impl.current_state_name
 
   @property
   def output_from_state(self) -> str:
@@ -54,7 +54,7 @@ class Runner():
     self._storage = FlowStorage(cfg, model.get_as_ws())
     flow_converter = FlowConverter(model)
     fsm_def = flow_converter.convert()
-    self._create_frfsm(cfg_fsm, fsm_def)
+    self._create_fsm(cfg_fsm, fsm_def)
     return
 
   def reset(self) -> None:
@@ -62,20 +62,22 @@ class Runner():
     self._start()
     return
 
-  # create fsm context  
-  def _create_frfsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
-    self._frfsm = Frfsm(fsm_conf, fsm_def)
+  # create FSM  
+  def _create_fsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
+    fsm_builder = FsmBuilder(fsm_conf, fsm_def)
+    self._fsm_impl = FSM(fsm_builder)
+
     return
 
   def _start(self) -> None:
-    self._fsm.start(self._frfsm.impl)   
-    self.output_from_state = self._fsm.current_state_name
+    self._fsm_impl.start()   
+    self.output_from_state = self._fsm_impl.current_state_name
     return
 
 # execute requests
   def run_all(self) -> None:
-    n = self._frfsm.number_of_states
-    last_sate_id = self._frfsm.state_names[n-1]
+    n = self._fsm_impl.number_of_states
+    last_sate_id = self._fsm_impl.state_names[n-1]
     while (self.state_id != last_sate_id):
       self.run_step('next', self.state_idx)
     return
@@ -118,9 +120,9 @@ class Runner():
     return data
 
   def _next(self, flow_item: FlowItemModel) -> None:
-    if self.state_idx == self._frfsm.number_of_states-1:
+    if self.state_idx == self._fsm_impl.number_of_states-1:
       return
-    self._fsm.set_user_data("params", flow_item.params)
+    self._fsm_impl.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
     event = 'next'
     if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
@@ -130,11 +132,11 @@ class Runner():
 
     # Remember current state for future usage
     state_id = self.state_id
-    self._fsm.set_user_data("data", data)   
+    self._fsm_impl.set_user_data("data", data)   
     # Perform the step
-    self._fsm.dispatch(event)
+    self._fsm_impl.dispatch(event)
 
-    data = self._fsm.get_user_data("data")
+    data = self._fsm_impl.get_user_data("data")
     if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
       data = self._store_stm_context(state_id, data)
     self.storage.set_state_output_data(state_id, data)
@@ -146,21 +148,21 @@ class Runner():
     event = 'prev'
     if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
       event = 'begin_stm'
-    self._fsm.dispatch(event)
+    self._fsm_impl.dispatch(event)
     self.output_from_state = self.state_id
     return
 
   def _current(self, flow_item: FlowItemModel):
     event = 'current'
-    self._fsm.set_user_data("params", flow_item.params)
+    self._fsm_impl.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
-    self._fsm.set_user_data("data", data)
+    self._fsm_impl.set_user_data("data", data)
 
     # Perform the step
-    self._fsm.dispatch(event)
+    self._fsm_impl.dispatch(event)
 
     # Strore output data of the state
-    data = self._fsm.get_user_data("data")
+    data = self._fsm_impl.get_user_data("data")
     self.storage.set_state_output_data(self.state_id, data)
     self.output_from_state = self.state_id
     return
