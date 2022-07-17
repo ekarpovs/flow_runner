@@ -7,5 +7,5 @@ setup(name='flow_runner',
       author='ekarpovs',
       author_email='',
       license='MIT',
-      packages=['flow_runner', 'frfsm'],
+      packages=['flow_runner'],
       zip_safe=False)

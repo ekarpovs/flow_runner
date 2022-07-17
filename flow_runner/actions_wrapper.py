@@ -1,6 +1,6 @@
 # from typing import List
 
-def flow_runner_action(oper_impl):
+def actions_wrapper(oper_impl):
   '''
     Wrapper for any Flow Runner function (loaded from a module)
   '''

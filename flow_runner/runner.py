@@ -2,7 +2,6 @@ from typing import Dict, Tuple
 
 from flow_storage import FlowStorage, FlowStorageConfig
 from gfsm.fsm import FSM
-from frfsm.frfsm import Frfsm
 from flow_model import FlowModel, FlowItemModel
 from flow_converter import FlowConverter
 from gfsm.fsm_builder.fsm_builder import FsmBuilder
