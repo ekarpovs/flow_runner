@@ -6,6 +6,7 @@ from flow_model import FlowModel, FlowItemModel
 from flow_converter import FlowConverter
 from gfsm.fsm_builder.fsm_builder import FsmBuilder
 
+
 class Runner():
   def __init__(self):
     self._storage: FlowStorage = None
@@ -14,17 +15,16 @@ class Runner():
     self._output_from_state = None
     return
 
-# Properties
+  # Properties
   @property
   def storage(self) -> FlowStorage:
     return self._storage
-  
+
   @property
   def initialized(self) -> bool:
     return self._fsm_impl is not None
 
-  # runtime
-  #  
+  # Runtime
   @property
   def state_idx(self) -> int:
      return self._fsm_impl.current_state_id
@@ -42,8 +42,7 @@ class Runner():
     self._output_from_state = value
     return
 
-
-# Methods
+  # Methods
   # the runner's life cycle
   def build(self, cfg_fsm: Dict, model: FlowModel) -> None:
     if self.storage is not None:
@@ -61,7 +60,7 @@ class Runner():
     self._start()
     return
 
-  # create FSM  
+  # create FSM
   def _create_fsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
     fsm_builder = FsmBuilder(fsm_conf, fsm_def)
     self._fsm_impl = FSM(fsm_builder)
@@ -69,14 +68,14 @@ class Runner():
     return
 
   def _start(self) -> None:
-    self._fsm_impl.start()   
+    self._fsm_impl.start()
     self.output_from_state = self._fsm_impl.current_state_name
     return
 
-# execute requests
+  # Execute requests
   def run_all(self) -> None:
     n = self._fsm_impl.number_of_states
-    last_sate_id = self._fsm_impl.state_names[n-1]
+    last_sate_id = self._fsm_impl.state_names[n - 1]
     while (self.state_id != last_sate_id):
       self.run_step('next', self.state_idx)
     return
@@ -88,7 +87,7 @@ class Runner():
     if event == 'prev':
       return self._prev(flow_item)
     return self._current(flow_item)
-  
+
   @staticmethod
   def _init_stm_context() -> Dict:
     execution_context = {}
@@ -96,7 +95,9 @@ class Runner():
     execution_context['result'] = True
     return execution_context
 
-  def _restore_stm_context(self, state_id: str, data: Dict) -> Tuple[str, Dict]:
+  def _restore_stm_context(self,
+                           state_id: str,
+                           data: Dict) -> Tuple[str, Dict]:
     event = 'next'
     cache = self.storage.get_state_cache_data(state_id)
     execution_context = cache.get('stmselfcache')
@@ -119,24 +120,25 @@ class Runner():
     return data
 
   def _next(self, flow_item: FlowItemModel) -> None:
-    if self.state_idx == self._fsm_impl.number_of_states-1:
+    if self.state_idx == self._fsm_impl.number_of_states - 1:
       return
     self._fsm_impl.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
     event = 'next'
-    if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
+    name = flow_item.name
+    if (name == 'glbstm.for_begin' or name == 'glbstm.while_begin'):
       event, data = self._restore_stm_context(self.state_id, data)
-    if flow_item.name == 'glbstm.for_end' or flow_item.name == 'glbstm.while_end':
+    if(name == 'glbstm.for_end' or name == 'glbstm.while_end'):
       event = 'begin_stm'
 
     # Remember current state for future usage
     state_id = self.state_id
-    self._fsm_impl.set_user_data("data", data)   
+    self._fsm_impl.set_user_data("data", data)
     # Perform the step
     self._fsm_impl.dispatch(event)
 
     data = self._fsm_impl.get_user_data("data")
-    if flow_item.name == 'glbstm.for_begin' or flow_item.name == 'glbstm.while_begin':
+    if (name == 'glbstm.for_begin' or name == 'glbstm.while_begin'):
       data = self._store_stm_context(state_id, data)
     self.storage.set_state_output_data(state_id, data)
     self.output_from_state = state_id
@@ -145,7 +147,10 @@ class Runner():
   def _prev(self, flow_item: FlowItemModel):
     self.storage.clean_state_output_data(self.state_id)
     event = 'prev'
-    if flow_item.name == 'glbstm.if_end' or flow_item.name == 'glbstm.while_end' or flow_item.name == 'glbstm.for_end':
+    name = flow_item.name
+    if (name == 'glbstm.if_end' or
+        name == 'glbstm.while_end' or
+        name == 'glbstm.for_end'):
       event = 'begin_stm'
     self._fsm_impl.dispatch(event)
     self.output_from_state = self.state_id
