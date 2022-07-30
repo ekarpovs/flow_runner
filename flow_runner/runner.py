@@ -2,6 +2,7 @@ from typing import Dict, Tuple
 
 from flow_storage import FlowStorage, FlowStorageConfig
 from gfsm.fsm import FSM
+from gfsm.context import Context
 from flow_model import FlowModel, FlowItemModel
 from flow_converter import FlowConverter
 from gfsm.fsm_builder.fsm_builder import FsmBuilder
@@ -12,6 +13,7 @@ class Runner():
     self._storage: FlowStorage = None
     self._model: FlowModel = None
     self._fsm_impl = None
+    self._context = None
     self._output_from_state = None
     return
 
@@ -27,11 +29,12 @@ class Runner():
   # Runtime
   @property
   def state_idx(self) -> int:
-     return self._fsm_impl.current_state_id
+     parts = self._context.current_state_name.split('-')
+     return int(parts[0])
 
   @property
   def state_id(self) -> int:
-     return self._fsm_impl.current_state_name
+     return self._context.current_state_name
 
   @property
   def output_from_state(self) -> str:
@@ -64,12 +67,12 @@ class Runner():
   def _create_fsm(self, fsm_conf: Dict, fsm_def: Dict) -> None:
     fsm_builder = FsmBuilder(fsm_conf, fsm_def)
     self._fsm_impl = FSM(fsm_builder)
-
+    self._context = Context('wf-runner')
+    self._context.current_state_name = fsm_builder.first_state_name
     return
 
   def _start(self) -> None:
     self._fsm_impl.start()
-    self.output_from_state = self._fsm_impl.current_state_name
     return
 
   # Execute requests
@@ -122,7 +125,7 @@ class Runner():
   def _next(self, flow_item: FlowItemModel) -> None:
     if self.state_idx == self._fsm_impl.number_of_states - 1:
       return
-    self._fsm_impl.set_user_data("params", flow_item.params)
+    self._context.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
     event = 'next'
     name = flow_item.name
@@ -133,11 +136,11 @@ class Runner():
 
     # Remember current state for future usage
     state_id = self.state_id
-    self._fsm_impl.set_user_data("data", data)
+    self._context.set_user_data("data", data)
     # Perform the step
-    self._fsm_impl.dispatch(event)
+    self._fsm_impl.dispatch(event, self._context)
 
-    data = self._fsm_impl.get_user_data("data")
+    data = self._context.get_user_data("data")
     if (name == 'glbstm.for_begin' or name == 'glbstm.while_begin'):
       data = self._store_stm_context(state_id, data)
     self.storage.set_state_output_data(state_id, data)
@@ -152,21 +155,21 @@ class Runner():
         name == 'glbstm.while_end' or
         name == 'glbstm.for_end'):
       event = 'begin_stm'
-    self._fsm_impl.dispatch(event)
+    self._fsm_impl.dispatch(event, self._context)
     self.output_from_state = self.state_id
     return
 
   def _current(self, flow_item: FlowItemModel):
     event = 'current'
-    self._fsm_impl.set_user_data("params", flow_item.params)
+    self._context.set_user_data("params", flow_item.params)
     data = self.storage.get_state_input_data(self.state_id)
-    self._fsm_impl.set_user_data("data", data)
+    self._context.set_user_data("data", data)
 
     # Perform the step
-    self._fsm_impl.dispatch(event)
+    self._fsm_impl.dispatch(event, self._context)
 
     # Strore output data of the state
-    data = self._fsm_impl.get_user_data("data")
+    data = self._context.get_user_data("data")
     self.storage.set_state_output_data(self.state_id, data)
     self.output_from_state = self.state_id
     return
