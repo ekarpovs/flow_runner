@@ -14,6 +14,7 @@ class Runner():
     self._model: FlowModel = None
     self._fsm_impl = None
     self._context = None
+    self._first_state_name = ''
     self._output_from_state = None
     return
 
@@ -60,6 +61,7 @@ class Runner():
 
   def reset(self) -> None:
     self._storage.reset()
+    self._context.current_state_name = self._first_state_name
     self._start()
     return
 
@@ -68,7 +70,8 @@ class Runner():
     fsm_builder = FsmBuilder(fsm_conf, fsm_def)
     self._fsm_impl = FSM(fsm_builder)
     self._context = Context('wf-runner')
-    self._context.current_state_name = fsm_builder.first_state_name
+    self._first_state_name = fsm_builder.first_state_name
+    self._context.current_state_name = self._first_state_name
     return
 
   def _start(self) -> None:
